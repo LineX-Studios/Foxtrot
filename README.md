@@ -15,7 +15,7 @@ Foxtrot is a highly optimized, open-source utility mod  exclusively for 1.8.9 Fo
 
 ### Installation notes
 * **Minecraft 1.8.9 Forge** is required.
-* **Java 8** is required (Standard for 1.8.9).
+* **jdk 8** is required (Standard for 1.8.9).
 
 ### Support & Links
 * **Support & discussion:** [Discord](https://discord.gg/ExfhRcVJnU)
