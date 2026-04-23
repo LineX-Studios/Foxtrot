@@ -1,0 +1,20 @@
+{
+  "required": true,
+  "minVersion": "0.7.11",
+  "package": "com.linexstudios.foxtrot.mixins",
+  "refmap": "mixins.foxtrot.refmap.json",
+  "target": "@env(DEFAULT)",
+  "compatibilityLevel": "JAVA_8",
+  "mixins": [
+    "MixinScorePlayerTeam",
+    "MixinNetHandlerPlayClient",
+    "MixinEntityPlayerSP",
+    "MixinPlayerControllerMP",
+    "MixinRenderItem"
+  ],
+  "client": [
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
