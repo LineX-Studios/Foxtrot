@@ -8,6 +8,7 @@ import com.linexstudios.foxtrot.Hud.*;
 import com.linexstudios.foxtrot.Render.*;
 import com.linexstudios.foxtrot.Combat.*;
 import com.linexstudios.foxtrot.Misc.*;
+import com.linexstudios.foxtrot.Misc.ModIDHider;
 import com.linexstudios.foxtrot.Util.*;
 
 import net.minecraft.client.settings.KeyBinding;
@@ -99,7 +100,8 @@ public class Foxtrot {
         MinecraftForge.EVENT_BUS.register(Ranks.instance);
         MinecraftForge.EVENT_BUS.register(new SpawnShortcut());
         MinecraftForge.EVENT_BUS.register(DeadLobbyFinder.instance);
-        MinecraftForge.EVENT_BUS.register(WorldLoadListener.instance); 
+        MinecraftForge.EVENT_BUS.register(WorldLoadListener.instance);
+        MinecraftForge.EVENT_BUS.register(ModIDHider.instance); // Stealth: spoof MC|Brand to vanilla
         MinecraftForge.EVENT_BUS.register(MapDetectionHandler.instance);
 
         ClientCommandHandler.instance.registerCommand(new CommandFoxtrot());

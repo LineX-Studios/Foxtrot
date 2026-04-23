@@ -41,3 +41,4 @@
 - **Focus Mode**: Hides all players except the one you are focusing on.
 - **Rank/Name Spoofing**: Customize your local appearance.
 - **Venom Timer**: Track your venom cooldowns.
+- **ModIDHider**: Intercepts the `MC|Brand` handshake packet and rewrites it to `vanilla` — hides Foxtrot from Hypixel server-side mod detection.

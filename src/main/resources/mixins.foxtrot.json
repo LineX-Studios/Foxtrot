@@ -12,7 +12,9 @@
     "MixinPlayerControllerMP",
     "MixinFontRenderer",
     "MixinGuiUtilRenderComponents",
-    "MixinRenderItem"
+    "MixinRenderItem",
+    "MixinNetworkManager",
+    "IAccessorC17PacketCustomPayload"
   ],
   "client": [
   ],

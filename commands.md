@@ -49,3 +49,6 @@
 
 ## Debugging
 - `/fx debug` - Toggle global debug logging (For Developers only).
+
+## Stealth
+- `/fx modidhider` - Toggle spoofing the client brand to "vanilla" to avoid mod detection on Hypixel.

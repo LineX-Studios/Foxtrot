@@ -24,13 +24,13 @@ import java.util.stream.Collectors;
 public class CommandFoxtrot extends CommandBase {
     @Override public String getCommandName() { return "foxtrot"; }
     @Override public List<String> getCommandAliases() { return Arrays.asList("fx"); }
-    @Override public String getCommandUsage(ICommandSender s) { return "/foxtrot <friend|teammate|guild|add|remove|list|alerts|toggle|clear|denick|debug|esp|autodenick|hud|nickhud|enemyhud|denickentry|rank|focus|nickname|ring|deadlobby|venom|enchantnames|nonhighlighter>"; }
+    @Override public String getCommandUsage(ICommandSender s) { return "/foxtrot <friend|teammate|guild|add|remove|list|alerts|toggle|clear|denick|debug|esp|autodenick|hud|nickhud|enemyhud|denickentry|rank|focus|nickname|ring|deadlobby|venom|enchantnames|nonhighlighter|modidhider>"; }
     @Override public int getRequiredPermissionLevel() { return 0; }
 
     @Override public void processCommand(ICommandSender s, String[] args) throws CommandException {
         if (args.length == 0) {
             String p = EnumChatFormatting.YELLOW + "/foxtrot ", g = EnumChatFormatting.GRAY + "- ";
-            String[] h = {EnumChatFormatting.GRAY+"["+EnumChatFormatting.RED+"FOXTROT"+EnumChatFormatting.GRAY+"] "+EnumChatFormatting.RED+EnumChatFormatting.BOLD+"HELP MENU", "", p+"friend <add/remove/list> "+g+"Manage Friends", p+"teammate <add/remove/list> "+g+"Manage Team (Aliases: t, team, g, guild)", p+"add [name] "+g+"Add enemy", p+"remove [name] "+g+"Remove enemy", p+"list "+g+"View enemy list", p+"focus <name/remove/clear> "+g+"Hide all other players", p+"alerts "+g+"Toggle join alerts", p+"toggle "+g+"Toggle all HUDs", p+"esp "+g+"Toggle all ESP", p+"denick [name] "+g+"Scrape Player", p+"denickentry clear [name] "+g+"Clear cached nick", p+"autodenick "+g+"Toggle auto denicking", p+"hud "+g+"Open HUD Editor", p+"nickhud "+g+"Toggle NickedHUD", p+"enemyhud "+g+"Toggle EnemyHUD", p+"clear "+g+"Clear enemy list", p+"rank <prestige> <level> <rank> "+g+"Change Rank", p+"nickname <name|off> "+g+"Change username", p+"ring "+g+"Toggle Ring Helper", p+"deadlobby "+g+"Toggle Dead Lobby Finder", p+"venom "+g+"Toggle Venom Timer", p+"enchantnames "+g+"Toggle Enchant Names", p+"nonhighlighter "+g+"Toggle Non Highlighter ESP"};
+            String[] h = {EnumChatFormatting.GRAY+"["+EnumChatFormatting.RED+"FOXTROT"+EnumChatFormatting.GRAY+"] "+EnumChatFormatting.RED+EnumChatFormatting.BOLD+"HELP MENU", "", p+"friend <add/remove/list> "+g+"Manage Friends", p+"teammate <add/remove/list> "+g+"Manage Team (Aliases: t, team, g, guild)", p+"add [name] "+g+"Add enemy", p+"remove [name] "+g+"Remove enemy", p+"list "+g+"View enemy list", p+"focus <name/remove/clear> "+g+"Hide all other players", p+"alerts "+g+"Toggle join alerts", p+"toggle "+g+"Toggle all HUDs", p+"esp "+g+"Toggle all ESP", p+"denick [name] "+g+"Scrape Player", p+"denickentry clear [name] "+g+"Clear cached nick", p+"autodenick "+g+"Toggle auto denicking", p+"hud "+g+"Open HUD Editor", p+"nickhud "+g+"Toggle NickedHUD", p+"enemyhud "+g+"Toggle EnemyHUD", p+"clear "+g+"Clear enemy list", p+"rank <prestige> <level> <rank> "+g+"Change Rank", p+"nickname <name|off> "+g+"Change username", p+"ring "+g+"Toggle Ring Helper", p+"deadlobby "+g+"Toggle Dead Lobby Finder", p+"venom "+g+"Toggle Venom Timer", p+"enchantnames "+g+"Toggle Enchant Names", p+"nonhighlighter "+g+"Toggle Non Highlighter ESP", p+"modidhider "+g+"Spoof client brand to vanilla"};
             for(String str : h) s.addChatMessage(new ChatComponentText(str)); return;
         }
         String a = args[0].toLowerCase(); ConfigHandler.logDebug("User executed: /fx " + String.join(" ", args));
@@ -40,6 +40,7 @@ public class CommandFoxtrot extends CommandBase {
             case "enchantnames": EnchantNames.enabled = !EnchantNames.enabled; ConfigHandler.saveConfig(); msg(s, "Enchant Names", EnchantNames.enabled); break;
             case "deadlobby": DeadLobbyFinder.toggle(); ConfigHandler.saveConfig(); break;
             case "ring": RingHelper.toggle(); ConfigHandler.saveConfig(); break;
+            case "modidhider": ModIDHider.toggle(); ConfigHandler.saveConfig(); break;
             case "nickname": case "nick":
                 if(args.length>=2){ if(args[1].matches("(?i)reset|off|clear")){ Ranks.changeName=false; Ranks.targetName=""; ConfigHandler.saveConfig(); msg(s, EnumChatFormatting.GREEN+"Nickname cleared!"); } else { Ranks.changeName=true; Ranks.targetName=args[1]; ConfigHandler.saveConfig(); msg(s, EnumChatFormatting.GREEN+"Nickname set to "+EnumChatFormatting.WHITE+args[1]); } } else msg(s, EnumChatFormatting.RED+"Usage: /fx nickname <name|off>"); break;
             case "focus":
