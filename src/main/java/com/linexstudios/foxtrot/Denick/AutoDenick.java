@@ -91,6 +91,19 @@ public class AutoDenick {
                             Collections.addAll(itemsToCheck, p.inventory.armorInventory);
                             Collections.addAll(itemsToCheck, p.inventory.mainInventory);
 
+                            boolean hasMystic = false;
+                            for (ItemStack item : itemsToCheck) {
+                                if (item != null && item.hasTagCompound()) {
+                                    NBTTagCompound extra = item.getTagCompound().getCompoundTag("ExtraAttributes");
+                                    if (extra != null && (extra.hasKey("Nonce") || extra.hasKey("CustomEnchants"))) {
+                                        hasMystic = true;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if (!hasMystic) continue; // Skip players without mystic gear
+
                             for (ItemStack item : itemsToCheck) {
                                 if (item != null && item.hasTagCompound()) {
                                     NBTTagCompound extra = item.getTagCompound().getCompoundTag("ExtraAttributes");

@@ -33,9 +33,10 @@
 - `/fx toggle` - Global toggle for all HUD elements.
 
 ## Denicking
-- `/fx denick [name]` - Manually trigger a denick scrape.
-- `/fx denickentry clear [name]` - Clear cached nick info for a player (or all players if name is omitted).
-- `/fx autodenick` - Toggle automatic denicking of all players in the lobby.
+- `/fx denick [name]` - Manually scrape and denick nicked players (Mystic items on hotbar/Armor Slot required).
+- `/fx denickentry clear [name]` - Clear cached nick info for a player.
+- `/fx denickentry clear` - clear ALL cached nick entries.
+- `/fx autodenick` - Toggle automatic denicking (Mystic-Only).
 
 ## Utilities
 - `/fx focus <name|remove|clear>` - Hide all players except the target.
@@ -44,7 +45,7 @@
 - `/fx ring` - Toggle the Ring Helper module.
 - `/fx deadlobby` - Toggle the Dead Lobby Finder.
 - `/fx venom` - Toggle the Venom Timer HUD.
-- `/fx enchantnames` - Toggle custom enchantment names on items.
+- `/fx enchantnames` - Toggle custom enchantment names on items on top of the player's nametag.
 
 ## Debugging
-- `/fx debug` - Toggle global debug logging to console.
+- `/fx debug` - Toggle global debug logging (For Developers only).

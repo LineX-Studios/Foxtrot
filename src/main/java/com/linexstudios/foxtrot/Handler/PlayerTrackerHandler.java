@@ -31,7 +31,7 @@ public class PlayerTrackerHandler {
         }
     }
 
-    public static final Map<String, TrackedPlayer> activePlayers = new HashMap<>();
+    public static final Map<String, TrackedPlayer> activePlayers = new java.util.concurrent.ConcurrentHashMap<>();
 
     @SubscribeEvent
     public void onTick(TickEvent.ClientTickEvent event) {
@@ -40,8 +40,15 @@ public class PlayerTrackerHandler {
         NetHandlerPlayClient netHandler = mc.getNetHandler();
         if (netHandler == null) return;
 
-        Map<String, TrackedPlayer> newActive = new HashMap<>();
+        // Build a single lookup map of entities ONCE per tick to avoid O(N^2) complexity
+        Map<String, EntityOtherPlayerMP> entityLookup = new HashMap<>();
+        for (EntityPlayer p : mc.theWorld.playerEntities) {
+            if (p instanceof EntityOtherPlayerMP) {
+                entityLookup.put(p.getName().toLowerCase(), (EntityOtherPlayerMP) p);
+            }
+        }
 
+        Map<String, TrackedPlayer> newActive = new HashMap<>();
         for (NetworkPlayerInfo info : netHandler.getPlayerInfoMap()) {
             if (info == null || info.getGameProfile() == null) continue;
             
@@ -49,42 +56,23 @@ public class PlayerTrackerHandler {
             if (name == null || name.isEmpty() || name.startsWith("§")) continue; 
 
             String uuid = info.getGameProfile().getId().toString();
+            String coloredName = (info.getDisplayName() != null) ? info.getDisplayName().getFormattedText() : 
+                                (info.getPlayerTeam() != null) ? ScorePlayerTeam.formatPlayerName(info.getPlayerTeam(), name) : name;
 
-            // 1. Grab EXACT TabList Prefix
-            String coloredName = null;
-            if (info.getDisplayName() != null) {
-                coloredName = info.getDisplayName().getFormattedText();
-            } else if (info.getPlayerTeam() != null) {
-                coloredName = ScorePlayerTeam.formatPlayerName(info.getPlayerTeam(), name);
-            } else {
-                coloredName = name;
-            }
+            if (coloredName == null) continue; 
 
-            // 2. DISCONNECT/GHOST FILTER:
-            // Relaxed the ghost filter to allow tracking players even without formatting, 
-            // especially useful in lobbies or single-player where the Pit prestige formatting doesn't exist.
-            if (coloredName == null) {
-                continue; 
-            }
-
-            // 3. BOUNTY & SUPPORTER STRIPPER: 
-            // Removes gold bounty (e.g. " §6[5,000g]") and Pit Supporter icons (e.g. " §b§l\u272a")
+            // BOUNTY & SUPPORTER STRIPPER
             coloredName = coloredName.replaceAll("\\s*\\u00A7[0-9a-fk-or]\\[[0-9,]+g\\]", "");
-            coloredName = coloredName.replaceAll("\\s*\\u00A7b\\u00A7l\\u272a", ""); // Remove blue star icon
-            coloredName = coloredName.replaceAll("\\s*\\u00A7e\\u00A7l\\u272a", ""); // Remove gold star icon
+            coloredName = coloredName.replaceAll("\\s*\\u00A7b\\u00A7l\\u272a", ""); 
+            coloredName = coloredName.replaceAll("\\s*\\u00A7e\\u00A7l\\u272a", ""); 
             coloredName = coloredName.trim();
 
-            TrackedPlayer tracked = activePlayers.getOrDefault(name, new TrackedPlayer(name, uuid));
-            tracked.entity = null;
-            tracked.lastKnownNamePlate = coloredName; // Safely set the clean, exact prefix
+            // GHOST & NPC FILTER: If they have no team color and no active entity, they are likely a ghost or irrelevant NPC
+            if (info.getPlayerTeam() == null && entityLookup.get(name.toLowerCase()) == null) continue;
 
-            // Link the physical entity if they are loaded nearby
-            for (EntityPlayer p : mc.theWorld.playerEntities) {
-                if (p instanceof EntityOtherPlayerMP && p.getName().equalsIgnoreCase(name)) {
-                    tracked.entity = (EntityOtherPlayerMP) p;
-                    break;
-                }
-            }
+            TrackedPlayer tracked = activePlayers.getOrDefault(name, new TrackedPlayer(name, uuid));
+            tracked.entity = entityLookup.get(name.toLowerCase()); // Instant O(1) lookup
+            tracked.lastKnownNamePlate = coloredName;
 
             newActive.put(name, tracked);
         }
@@ -92,4 +80,4 @@ public class PlayerTrackerHandler {
         activePlayers.clear();
         activePlayers.putAll(newActive);
     }
-}
+}

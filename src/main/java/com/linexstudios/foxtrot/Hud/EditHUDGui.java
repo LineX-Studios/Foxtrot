@@ -198,6 +198,19 @@ public class EditHUDGui extends GuiScreen {
     private void drawIOSToggle(float x, float y, float cW, String l, boolean o, int mX, int mY) { fontRendererObj.drawStringWithShadow(l, x, y+2, 0xDDDDDD); float sX = x+cW-28, sY = y+1; RenderUtils.drawRoundedRect(sX, sY, 24, 12, 6, o?COLOR_ENABLED:(isInside(mX,mY,sX,sY,24,12)?0xFF555555:0xFF444444)); RenderUtils.drawCircle(o?sX+18:sX+6, sY+6, 5, 0xFFFFFFFF); }
     private void drawIOSButton(float x, float y, float w, float h, String t, int mX, int mY) { drawInnerRoundedRect(x, y, w, h, 3, 0x33FFFFFF, isInside(mX, mY, x, y, w, h)); fontRendererObj.drawStringWithShadow(t, x+(w-fontRendererObj.getStringWidth(t))/2f, y+(h-8)/2f, -1); }
     private boolean isInside(float mX, float mY, float x, float y, float w, float h) { return mX>=x && mX<=x+w && mY>=y && mY<=y+h; }
+    @Override
+    protected void keyTyped(char typedChar, int keyCode) throws IOException {
+        if (whitelistField != null && whitelistField.getVisible() && whitelistField.isFocused()) {
+            if (keyCode == Keyboard.KEY_ESCAPE) {
+                whitelistField.setFocused(false);
+            } else {
+                whitelistField.textboxKeyTyped(typedChar, keyCode);
+            }
+            return;
+        }
+        super.keyTyped(typedChar, keyCode);
+    }
+
     @Override public void onGuiClosed() { 
         Keyboard.enableRepeatEvents(false); 
         if (whitelistField != null) {

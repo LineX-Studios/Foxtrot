@@ -70,27 +70,18 @@ public class FriendsHUD extends DraggableHUD {
             }
         }
 
-        int maxNameW = 0;
-        for (HUDRow row : rows) {
-            maxNameW = Math.max(maxNameW, fr.getStringWidth(row.name));
-        }
-
         fr.drawStringWithShadow(EnumChatFormatting.GREEN + "" + EnumChatFormatting.BOLD + "Friend List:", 0, currentY, 0xFFFFFF);
         currentY += fr.FONT_HEIGHT + 2;
 
-        int locX = maxNameW + 10;
-
         for (HUDRow row : rows) {
-            fr.drawStringWithShadow(row.name, 0, currentY, 0xFFFFFF);
-            if (!row.loc.isEmpty()) {
-                fr.drawStringWithShadow(EnumChatFormatting.GRAY + "- " + row.loc, locX, currentY, 0xFFFFFF);
-            }
+            String fullLine = row.name;
+            if (!row.loc.isEmpty()) fullLine += EnumChatFormatting.GRAY + " - " + row.loc;
+            
+            fr.drawStringWithShadow(fullLine, 0, currentY, 0xFFFFFF);
+            int lineWidth = fr.getStringWidth(fullLine);
+            if (lineWidth > maxWidth) maxWidth = lineWidth;
+            
             currentY += fr.FONT_HEIGHT;
-        }
-
-        for (HUDRow row : rows) {
-            int w = locX + (row.loc.isEmpty() ? 0 : fr.getStringWidth("- " + row.loc));
-            if (w > maxWidth) maxWidth = w;
         }
         
         this.width = maxWidth;

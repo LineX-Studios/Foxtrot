@@ -100,12 +100,7 @@ public abstract class DraggableHUD {
         float green = (float)(borderColor >> 8 & 255) / 255.0F;
         float blue = (float)(borderColor & 255) / 255.0F;
         
-        GL11.glPushMatrix();
-        GL11.glEnable(GL11.GL_BLEND);
-        GL11.glDisable(GL11.GL_TEXTURE_2D);
-        GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
         GL11.glColor4f(red, green, blue, alpha);
-        
         GL11.glLineWidth(1.0F); 
         
         GL11.glBegin(GL11.GL_LINE_LOOP);

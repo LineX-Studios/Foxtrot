@@ -8,6 +8,8 @@ import com.linexstudios.foxtrot.Combat.*;
 import com.linexstudios.foxtrot.Util.*;
 import com.linexstudios.foxtrot.Enemy.*;
 import com.linexstudios.foxtrot.Handler.ConfigHandler;
+import com.linexstudios.foxtrot.Handler.TeammateManager;
+import com.linexstudios.foxtrot.Handler.FriendsManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.CommandException;

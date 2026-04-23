@@ -31,7 +31,7 @@ public class NickedRender {
         
         String nick = player.getName();
         
-        boolean isFriend = com.linexstudios.foxtrot.Hud.FriendsHUD.isFriend(nick);
+        boolean isFriend = com.linexstudios.foxtrot.Hud.FriendsHUD.isFriend(player.getUniqueID().toString(), nick);
         boolean isEnemy = com.linexstudios.foxtrot.Hud.EnemyHUD.isTarget(nick);
         boolean isNicked = com.linexstudios.foxtrot.Denick.AutoDenick.isNicked(player.getUniqueID());
 

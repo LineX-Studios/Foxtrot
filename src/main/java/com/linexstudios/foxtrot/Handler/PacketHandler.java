@@ -16,9 +16,9 @@ public class PacketHandler {
 
     @SubscribeEvent
     public void onConnect(FMLNetworkEvent.ClientConnectedToServerEvent event) {
-        ChannelPipeline pipeline = event.manager.channel().pipeline();
+        if (event.manager == null || event.manager.channel() == null) return;
+        final ChannelPipeline pipeline = event.manager.channel().pipeline();
         
-        // Safety: If the pipeline is already closed or handler exists, skip
         if (pipeline == null || pipeline.get(HANDLER_NAME) != null) return;
 
         try {
@@ -29,21 +29,19 @@ public class PacketHandler {
                         if (msg instanceof Packet) {
                             onPacketReceive((Packet<?>) msg);
                         }
-                    } catch (Exception e) {
-                        // CRITICAL: Never let an exception escape the Netty thread or it will crash the game
-                        System.err.println("[Foxtrot] Error in PacketHandler channelRead: " + e.getMessage());
-                        e.printStackTrace();
+                    } catch (Throwable t) {
+                        // Use Throwable to catch EVERYTHING, including Error
                     }
                     super.channelRead(ctx, msg);
                 }
             });
-        } catch (Exception e) {
-            System.err.println("[Foxtrot] Failed to inject Netty packet handler: " + e.getMessage());
-        }
+        } catch (Exception ignored) {}
     }
 
     private void onPacketReceive(Packet<?> packet) {
-        // We only listen for simple block changes to avoid heavy NBT processing on the network thread
+        if (packet == null || PitESP.instance == null) return;
+        
+        // Block changes are handled safely; no heavy logic allowed here
         if (packet instanceof S23PacketBlockChange) {
             PitESP.instance.onBlockChange((S23PacketBlockChange) packet);
         } else if (packet instanceof S22PacketMultiBlockChange) {
