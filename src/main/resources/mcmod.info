@@ -1,0 +1,16 @@
+[
+{
+  "modid": "foxtrot",
+  "name": "Foxtrot",
+  "description": "",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["Linex Studios"],
+  "credits": "",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]
