@@ -1,8 +1,11 @@
 package com.linexstudios.foxtrot.mixins;
 
 import com.linexstudios.foxtrot.Hud.TelebowHUD;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.network.NetHandlerPlayClient;
 import net.minecraft.network.play.server.S02PacketChat;
+import net.minecraft.network.play.server.S3BPacketScoreboardObjective;
+import net.minecraft.network.play.server.S3EPacketTeams;
 import net.minecraft.util.EnumChatFormatting;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -11,6 +14,28 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(NetHandlerPlayClient.class)
 public class MixinNetHandlerPlayClient {
+
+    // ==========================================
+    //    SCOREBOARD NULL-SAFETY GUARD (NPE FIX)
+    //  Vanilla 1.8.9 race condition: Hypixel fires
+    //  S3B/S3E packets during server transfer while
+    //  the local scoreboard has already been reset.
+    // ==========================================
+    @Inject(method = "handleScoreboardObjective", at = @At("HEAD"), cancellable = true)
+    public void onHandleScoreboardObjective(S3BPacketScoreboardObjective packetIn, CallbackInfo ci) {
+        Minecraft mc = Minecraft.getMinecraft();
+        if (mc.theWorld == null || mc.theWorld.getScoreboard() == null) {
+            ci.cancel(); // Drop packet — scoreboard not ready yet
+        }
+    }
+
+    @Inject(method = "handleTeams", at = @At("HEAD"), cancellable = true)
+    public void onHandleTeams(S3EPacketTeams packetIn, CallbackInfo ci) {
+        Minecraft mc = Minecraft.getMinecraft();
+        if (mc.theWorld == null || mc.theWorld.getScoreboard() == null) {
+            ci.cancel(); // Drop packet — scoreboard not ready yet
+        }
+    }
 
     // ==========================================
     //           TELEBOW CHAT INJECTION

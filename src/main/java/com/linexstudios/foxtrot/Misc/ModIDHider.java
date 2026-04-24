@@ -13,7 +13,7 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 /**
  * ModIDHider — Intercepts the MC|Brand handshake packet and rewrites the
  * client brand string to "vanilla", making Foxtrot invisible to Hypixel's
- * mod-detection and anti-cheat systems.
+ * mod-detection and anti-cheat.
  */
 public class ModIDHider {
     public static final ModIDHider instance = new ModIDHider();
@@ -22,11 +22,13 @@ public class ModIDHider {
     public static boolean enabled = true;
     public static String spoofedBrand = "vanilla";
 
-    private ModIDHider() {}
+    private ModIDHider() {
+    }
 
     @SubscribeEvent
     public void onPacketSend(PacketEvent event) {
-        if (!enabled) return;
+        if (!enabled)
+            return;
 
         if (event.getPacket() instanceof C17PacketCustomPayload) {
             C17PacketCustomPayload packet = (C17PacketCustomPayload) event.getPacket();
@@ -47,8 +49,7 @@ public class ModIDHider {
             mc.thePlayer.addChatMessage(new ChatComponentText(
                     EnumChatFormatting.GRAY + "[" + EnumChatFormatting.RED + "Foxtrot"
                             + EnumChatFormatting.GRAY + "] "
-                            + EnumChatFormatting.GRAY + "ModIDHider: " + state
-            ));
+                            + EnumChatFormatting.GRAY + "ModIDHider: " + state));
         }
     }
 }
