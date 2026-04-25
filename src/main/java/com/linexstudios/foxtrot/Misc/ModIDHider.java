@@ -25,19 +25,7 @@ public class ModIDHider {
     private ModIDHider() {
     }
 
-    @SubscribeEvent
-    public void onPacketSend(PacketEvent event) {
-        if (!enabled)
-            return;
-
-        if (event.getPacket() instanceof C17PacketCustomPayload) {
-            C17PacketCustomPayload packet = (C17PacketCustomPayload) event.getPacket();
-            if ("MC|Brand".equals(packet.getChannelName())) {
-                IAccessorC17PacketCustomPayload accessor = (IAccessorC17PacketCustomPayload) packet;
-                accessor.setData(new PacketBuffer(Unpooled.buffer()).writeString(spoofedBrand));
-            }
-        }
-    }
+    // Brand spoofing is now handled silently in MixinNetworkManager.
 
     public static void toggle() {
         enabled = !enabled;

@@ -90,17 +90,25 @@ public class MapDetectionHandler {
         lastCheck = now;
 
         int playerY = (int) mc.thePlayer.posY;
+        BlockPos bpGenesis = new BlockPos(0, 43, 0);
+        BlockPos bpElements = new BlockPos(0, 71, 0);
+        BlockPos bpCastle1 = new BlockPos(0, 82, 11);
+        BlockPos bpCastle2 = new BlockPos(0, 82, 10);
 
-        if (!mc.theWorld.isAirBlock(new BlockPos(0, 43, 0)) || playerY < 60) {
+        if (!mc.theWorld.isBlockLoaded(bpGenesis) || !mc.theWorld.isBlockLoaded(bpElements)) return;
+
+        if (!mc.theWorld.isAirBlock(bpGenesis) || playerY < 60) {
             currentMap = PitMap.GENESIS;
-        } else if (!mc.theWorld.isAirBlock(new BlockPos(0, 71, 0)) || (playerY >= 60 && playerY < 80)) {
+        } else if (!mc.theWorld.isAirBlock(bpElements) || (playerY >= 60 && playerY < 80)) {
             currentMap = PitMap.ELEMENTS;
         } else {
-            if (!mc.theWorld.isAirBlock(new BlockPos(0, 82, 11))) {
+            if (!mc.theWorld.isBlockLoaded(bpCastle1) || !mc.theWorld.isBlockLoaded(bpCastle2)) return;
+            
+            if (!mc.theWorld.isAirBlock(bpCastle1)) {
                 currentMap = PitMap.FOUR_SEASONS;
-            } else if (!mc.theWorld.isAirBlock(new BlockPos(0, 82, 10))) {
+            } else if (!mc.theWorld.isAirBlock(bpCastle2)) {
                 currentMap = PitMap.CORALS;
-            } else if (playerY > 80 && playerY < 100 && mc.theWorld.isAirBlock(new BlockPos(0, 82, 11))) {
+            } else if (playerY > 80 && playerY < 100 && mc.theWorld.isAirBlock(bpCastle1)) {
                 currentMap = PitMap.CASTLE;
             } else {
                 currentMap = PitMap.UNKNOWN;

@@ -80,7 +80,7 @@ public class DeadLobbyFinder {
             ScorePlayerTeam team = scoreboard.getPlayersTeam(score.getPlayerName());
             if (team != null) {
                 String cleanLine = StringUtils.stripControlCodes(team.formatString("")).toLowerCase();
-                if (cleanLine.contains("fighting") || cleanLine.contains("combat") || cleanLine.contains("bountied")) {
+                if (cleanLine.contains("fighting") || cleanLine.contains("combat")) {
                     return true;
                 }
             }

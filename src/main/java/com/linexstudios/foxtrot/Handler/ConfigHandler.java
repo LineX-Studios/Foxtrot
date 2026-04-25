@@ -17,6 +17,7 @@ public class ConfigHandler {
     private static final File updaterDir = new File(Minecraft.getMinecraft().mcDataDir, "Foxtrot_Updates"), updaterSettingsFile = new File(updaterDir, "update_settings.txt");
     
     private static int getInt(Properties p, String k, int d) { try { return (int)Float.parseFloat(p.getProperty(k, String.valueOf(d))); } catch(Exception e) { return d; } }
+    private static double getDouble(Properties p, String k, double d) { try { return Double.parseDouble(p.getProperty(k, String.valueOf(d))); } catch(Exception e) { return d; } }
     private static float getFloat(Properties p, String k, float d) { try { return Float.parseFloat(p.getProperty(k, String.valueOf(d))); } catch(Exception e) { return d; } }
     private static boolean getBool(Properties p, String k, boolean d) { try { return Boolean.parseBoolean(p.getProperty(k, String.valueOf(d))); } catch(Exception e) { return d; } }
     private static void initHUDs() { Object[] f = {PotionHUD.instance, ArmorHUD.instance, CoordsHUD.instance, EnemyHUD.instance, NickedHUD.instance, FriendsHUD.instance, SessionStatsHUD.instance, EventHUD.instance, RegHUD.instance, DarksHUD.instance, ToggleSprintModule.instance, CPSModule.instance, FPSModule.instance, BossBarModule.instance, TelebowHUD.instance, PlayerCounterHUD.instance, VenomTimer.instance}; }
@@ -34,7 +35,19 @@ public class ConfigHandler {
             if (friendsFile.exists()) { BufferedReader r = new BufferedReader(new FileReader(friendsFile)); String l; FriendsHUD.friendsList.clear(); while ((l=r.readLine())!=null) if (!l.trim().isEmpty()) FriendsHUD.friendsList.add(l.trim()); r.close(); }
             if (settingsFile.exists()) {
                 Properties p = new Properties(); try (FileInputStream i = new FileInputStream(settingsFile)) { p.load(i); }
-                for (DraggableHUD h : DraggableHUD.getRegistry()) { String n = h.name.replaceAll("\\s+", ""); h.x = getInt(p, n + "X", h.x); h.y = getInt(p, n + "Y", h.y); h.scale = getFloat(p, n + "Scale", h.scale); }
+                for (DraggableHUD h : DraggableHUD.getRegistry()) { 
+                    String n = h.name.replaceAll("\\s+", ""); 
+                    h.relativeX = getDouble(p, n + "RelX", -1.0); 
+                    h.relativeY = getDouble(p, n + "RelY", -1.0); 
+                    
+                    // LEGACY MIGRATION: If no relative pos exists, load the old pixel pos
+                    if (h.relativeX == -1.0) {
+                        h.x = getInt(p, n + "X", h.x);
+                        h.y = getInt(p, n + "Y", h.y);
+                    }
+                    
+                    h.scale = getFloat(p, n + "Scale", h.scale);
+                }
                 PotionHUD.instance.isHorizontal = getBool(p, "potionHorizontal", false); PotionHUD.nameColor = getInt(p, "potionNameColor", 16777215); PotionHUD.durationColor = getInt(p, "potionDurationColor", 11184810); ArmorHUD.durabilityColor = getInt(p, "armorDurabilityColor", 16777215); ArmorHUD.instance.isHorizontal = getBool(p, "armorHorizontal", false); CoordsHUD.instance.isHorizontal = getBool(p, "coordsHorizontal", false); CoordsHUD.axisColor = getInt(p, "coordsAxisColor", 16733525); CoordsHUD.numberColor = getInt(p, "coordsNumberColor", 16777215);
                 ToggleSprintModule.instance.enabled = getBool(p, "toggleSprintEnabled", false); ToggleSprintModule.instance.toggleSprint = getBool(p, "tsSprint", true); ToggleSprintModule.instance.toggleSneak = getBool(p, "tsSneak", false); ToggleSprintModule.instance.wTapFix = getBool(p, "tsWTapFix", true); ToggleSprintModule.instance.flyBoost = getBool(p, "tsFlyBoost", true); ToggleSprintModule.instance.flyBoostAmount = getFloat(p, "tsFlyBoostAmount", 4.0f); ToggleSprintModule.instance.textColor = getInt(p, "tsTextColor", 16777215);
                 CPSModule.showBackground = getBool(p, "cpsShowBg", true); CPSModule.textColor = getInt(p, "cpsTextColor", 16777215); FPSModule.showBackground = getBool(p, "fpsShowBg", true); FPSModule.textColor = getInt(p, "fpsTextColor", 16777215);
@@ -51,7 +64,7 @@ public class ConfigHandler {
                 telemetryEnabled = getBool(p, "telemetryEnabled", true); TelemetryManager.anonymousClientId = p.getProperty("telemetryId", ""); autoUpdateEnabled = getBool(p, "autoUpdateEnabled", true);
             } else { applyFirstRunDefaults(); saveConfig(); }
             EnemyManager.fetchMissingUUIDs(); FriendsManager.fetchMissingUUIDs();
-            if (Minecraft.getMinecraft().thePlayer != null) TeammateManager.updateGuild(Minecraft.getMinecraft().thePlayer.getName());
+            if (Minecraft.getMinecraft().thePlayer != null) TeammateManager.updateGuild(Minecraft.getMinecraft().thePlayer.getName(), true);
         } catch (Exception e) { e.printStackTrace(); }
     }
 
@@ -62,7 +75,13 @@ public class ConfigHandler {
             try(PrintWriter w = new PrintWriter(new FileWriter(enemyFile))){ for(String n : EnemyHUD.targetList) w.println(n); }
             try(PrintWriter w = new PrintWriter(new FileWriter(friendsFile))){ for(String n : FriendsHUD.friendsList) w.println(n); }
             Properties p = new Properties();
-            for (DraggableHUD h : DraggableHUD.getRegistry()) { String n = h.name.replaceAll("\\s+", ""); p.setProperty(n + "X", String.valueOf(h.x)); p.setProperty(n + "Y", String.valueOf(h.y)); p.setProperty(n + "Scale", String.valueOf(h.scale)); }
+            for (DraggableHUD h : DraggableHUD.getRegistry()) { 
+                String n = h.name.replaceAll("\\s+", ""); 
+                h.saveRelativePos();
+                p.setProperty(n + "RelX", String.valueOf(h.relativeX)); 
+                p.setProperty(n + "RelY", String.valueOf(h.relativeY)); 
+                p.setProperty(n + "Scale", String.valueOf(h.scale)); 
+            }
             p.setProperty("potionHorizontal", String.valueOf(PotionHUD.instance.isHorizontal)); p.setProperty("potionNameColor", String.valueOf(PotionHUD.nameColor)); p.setProperty("potionDurationColor", String.valueOf(PotionHUD.durationColor)); p.setProperty("armorDurabilityColor", String.valueOf(ArmorHUD.durabilityColor)); p.setProperty("armorHorizontal", String.valueOf(ArmorHUD.instance.isHorizontal)); p.setProperty("coordsHorizontal", String.valueOf(CoordsHUD.instance.isHorizontal)); p.setProperty("coordsAxisColor", String.valueOf(CoordsHUD.axisColor)); p.setProperty("coordsNumberColor", String.valueOf(CoordsHUD.numberColor));
             p.setProperty("toggleSprintEnabled", String.valueOf(ToggleSprintModule.instance.enabled)); p.setProperty("tsSprint", String.valueOf(ToggleSprintModule.instance.toggleSprint)); p.setProperty("tsSneak", String.valueOf(ToggleSprintModule.instance.toggleSneak)); p.setProperty("tsWTapFix", String.valueOf(ToggleSprintModule.instance.wTapFix)); p.setProperty("tsFlyBoost", String.valueOf(ToggleSprintModule.instance.flyBoost)); p.setProperty("tsFlyBoostAmount", String.valueOf(ToggleSprintModule.instance.flyBoostAmount)); p.setProperty("tsTextColor", String.valueOf(ToggleSprintModule.instance.textColor));
             p.setProperty("cpsShowBg", String.valueOf(CPSModule.showBackground)); p.setProperty("cpsTextColor", String.valueOf(CPSModule.textColor)); p.setProperty("fpsShowBg", String.valueOf(FPSModule.showBackground)); p.setProperty("fpsTextColor", String.valueOf(FPSModule.textColor));

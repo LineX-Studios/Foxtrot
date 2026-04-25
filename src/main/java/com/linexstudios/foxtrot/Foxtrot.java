@@ -31,9 +31,13 @@ public class Foxtrot {
 
     @Mod.EventHandler
     public void init(FMLInitializationEvent event) {
+        // Silence the "Security Seal" and "Not Secure" warnings in logs
+        System.setProperty("sun.misc.URLClassPath.disableJarChecking", "true");
+
         ConfigHandler.loadConfig();
         TelemetryManager.initialize();
         KeybindHandler.init();
+        DiscordRPCManager.start(); // Start anonymous Discord RPC
 
         toggleCombatKey = new KeyBinding("Toggle Auto-Clicker", Keyboard.KEY_DOWN, "Foxtrot");
         toggleInvFillKey = new KeyBinding("Toggle Inventory-Fill", Keyboard.KEY_RIGHT, "Foxtrot");

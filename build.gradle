@@ -27,7 +27,7 @@ compileJava {
 }
 
 // Change your version here, and it will update everywhere automatically
-version = "1.0.2H"
+version = "1.0.3"
 group = "com.linexstudios.foxtrot"
 archivesBaseName = "Foxtrot"
 
@@ -64,6 +64,9 @@ dependencies {
         exclude module: 'commons-io'
         exclude module: 'gson'
     }
+
+    // Discord Rich Presence
+    compile 'club.minnced:java-discord-rpc:2.0.2'
 }
 
 processResources {
@@ -113,4 +116,4 @@ shadowJar {
 }
 
 reobf { shadowJar { mappingType = "SEARGE" } }
-tasks.reobfShadowJar.mustRunAfter shadowJar
+shadowJar.finalizedBy reobfShadowJar

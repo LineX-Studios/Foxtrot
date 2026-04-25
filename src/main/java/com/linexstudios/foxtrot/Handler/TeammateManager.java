@@ -86,25 +86,36 @@ public class TeammateManager {
         }
     }
 
-    private static boolean hasFetchedToday = false;
+    private static boolean hasSyncedThisSession = false;
+    private static final File guildInfoFile = new File("config/Foxtrot/guild_info.txt");
 
     @net.minecraftforge.fml.common.eventhandler.SubscribeEvent
     public void onWorldJoin(net.minecraftforge.event.world.WorldEvent.Load event) {
-        if (hasFetchedToday || Minecraft.getMinecraft().thePlayer == null) return;
-        updateGuild(Minecraft.getMinecraft().thePlayer.getName());
-        hasFetchedToday = true;
+        if (Minecraft.getMinecraft().thePlayer == null) return;
+        
+        // Always try to sync once per game launch
+        if (!hasSyncedThisSession) {
+            updateGuild(Minecraft.getMinecraft().thePlayer.getName(), true);
+            hasSyncedThisSession = true;
+            return;
+        }
+
+        // Otherwise, only sync if 24h have passed (handled inside updateGuild)
+        updateGuild(Minecraft.getMinecraft().thePlayer.getName(), false);
     }
 
-    public static void updateGuild(String username) {
+    public static void updateGuild(String username, boolean forceSessionSync) {
         long now = System.currentTimeMillis();
-        if (lastFetchFile.exists()) {
-            try (BufferedReader reader = new BufferedReader(new FileReader(lastFetchFile))) {
-                long last = Long.parseLong(reader.readLine());
-                if (now - last < 24 * 60 * 60 * 1000) {
-                    System.out.println("[Foxtrot] Guild list already updated today.");
-                    return; 
-                }
-            } catch (Exception ignored) {}
+        
+        if (!forceSessionSync) {
+            if (lastFetchFile.exists()) {
+                try (BufferedReader reader = new BufferedReader(new FileReader(lastFetchFile))) {
+                    long last = Long.parseLong(reader.readLine());
+                    if (now - last < 24 * 60 * 60 * 1000) {
+                        return; // Already updated recently
+                    }
+                } catch (Exception ignored) {}
+            }
         }
 
         new Thread(() -> {
@@ -121,19 +132,34 @@ public class TeammateManager {
                     reader.close();
 
                     if (json.has("members")) {
-                        JsonArray members = json.getAsJsonArray("members");
-                        guildMembers.clear();
-                        for (int i = 0; i < members.size(); i++) {
-                            JsonObject m = members.get(i).getAsJsonObject();
-                            if (m.has("uuid")) {
-                                guildMembers.add(formatUUID(m.get("uuid").getAsString()));
-                            }
-                        }
+                        String currentGuildId = json.has("guild_id") ? json.get("guild_id").getAsString() : "unknown";
                         
-                        try (FileWriter writer = new FileWriter(lastFetchFile)) {
-                            writer.write(String.valueOf(now));
+                        // Detect guild change
+                        boolean guildChanged = true;
+                        if (guildInfoFile.exists()) {
+                            try (BufferedReader br = new BufferedReader(new FileReader(guildInfoFile))) {
+                                String savedId = br.readLine();
+                                if (currentGuildId.equals(savedId)) guildChanged = false;
+                            } catch (Exception ignored) {}
                         }
-                        System.out.println("[Foxtrot] Successfully fetched " + guildMembers.size() + " guild members.");
+
+                        // If guild changed, we always update even if not forced
+                        if (guildChanged || forceSessionSync) {
+                            JsonArray members = json.getAsJsonArray("members");
+                            guildMembers.clear();
+                            for (int i = 0; i < members.size(); i++) {
+                                JsonObject m = members.get(i).getAsJsonObject();
+                                if (m.has("uuid")) {
+                                    guildMembers.add(formatUUID(m.get("uuid").getAsString()));
+                                }
+                            }
+                            
+                            // Save sync time and guild info
+                            try (FileWriter writer = new FileWriter(lastFetchFile)) { writer.write(String.valueOf(now)); }
+                            try (FileWriter writer = new FileWriter(guildInfoFile)) { writer.write(currentGuildId); }
+                            
+                            System.out.println("[Foxtrot] Smart Sync: Updated " + guildMembers.size() + " members for guild: " + currentGuildId);
+                        }
                     }
                 }
             } catch (Exception e) {
