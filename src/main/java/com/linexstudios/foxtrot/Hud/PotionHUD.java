@@ -49,49 +49,67 @@ public class PotionHUD extends DraggableHUD {
 
         MapDetectionHandler.updateMap();
         FontRenderer fr = mc.fontRendererObj;
-        int currentY = 0;
+        int currentY = 5;
         int maxWidth = 0;
+
+        // Calculate dimensions first
+        for (PotionEffect effect : effects) {
+            Potion potion = Potion.potionTypes[effect.getPotionID()];
+            String name = net.minecraft.client.resources.I18n.format(potion.getName());
+            if (effect.getAmplifier() == 1) name += " II";
+            else if (effect.getAmplifier() == 2) name += " III";
+            int w = 18 + fr.getStringWidth(name);
+            if (w > maxWidth) maxWidth = w;
+        }
+
+        this.width = Math.max(80, maxWidth + 10);
+        this.height = (effects.size() * 20) + 5;
+
+        // Draw Background and Border (Foxtrot Theme)
+        net.minecraft.client.gui.Gui.drawRect(0, 0, this.width, this.height, 0x6F000000);
+        drawRectOutline(0, 0, this.width, this.height, 0x44FF0000);
 
         for (PotionEffect effect : effects) {
             Potion potion = Potion.potionTypes[effect.getPotionID()];
-            String name = potion.getName();
-            name = net.minecraft.client.resources.I18n.format(name);
-            
+            String name = net.minecraft.client.resources.I18n.format(potion.getName());
             if (effect.getAmplifier() == 1) name += " II";
             else if (effect.getAmplifier() == 2) name += " III";
-            else if (effect.getAmplifier() == 3) name += " IV";
-
+            
             String duration = Potion.getDurationString(effect);
 
             // Draw Icon
             if (potion.hasStatusIcon()) {
+                GlStateManager.pushMatrix();
+                GlStateManager.enableBlend();
+                GlStateManager.enableTexture2D();
                 GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-                mc.getTextureManager().bindTexture(new ResourceLocation("textures/gui/container/inventory.png"));
+                mc.getTextureManager().bindTexture(new net.minecraft.util.ResourceLocation("textures/gui/container/inventory.png"));
                 int iconIndex = potion.getStatusIconIndex();
                 int iconX = (iconIndex % 8) * 18;
                 int iconY = 198 + (iconIndex / 8) * 18;
                 
-                GlStateManager.pushMatrix();
-                GlStateManager.scale(0.6f, 0.6f, 1.0f);
-                mc.ingameGUI.drawTexturedModalRect(0, (int)(currentY / 0.6f) + 2, iconX, iconY, 18, 18);
+                GlStateManager.scale(0.7f, 0.7f, 1.0f);
+                mc.ingameGUI.drawTexturedModalRect(5, (int)(currentY / 0.7f) + 2, iconX, iconY, 18, 18);
                 GlStateManager.popMatrix();
             }
 
-            fr.drawStringWithShadow(name, 14, currentY, nameColor);
-            fr.drawStringWithShadow(duration, 14, currentY + 9, durationColor);
+            fr.drawStringWithShadow(name, 20, currentY, nameColor);
+            fr.drawStringWithShadow(duration, 20, currentY + 9, durationColor);
 
-            int width = 14 + fr.getStringWidth(name);
-            if (width > maxWidth) maxWidth = width;
             currentY += 20;
         }
+    }
 
-        this.width = maxWidth;
-        this.height = currentY;
+    private void drawRectOutline(int x, int y, int w, int h, int color) {
+        net.minecraft.client.gui.Gui.drawRect(x, y, x + w, y + 1, color);
+        net.minecraft.client.gui.Gui.drawRect(x, y + h - 1, x + w, y + h, color);
+        net.minecraft.client.gui.Gui.drawRect(x, y, x + 1, y + h, color);
+        net.minecraft.client.gui.Gui.drawRect(x + w - 1, y, x + w, y + h, color);
     }
 
     private void drawDummyPotions() {
         FontRenderer fr = mc.fontRendererObj;
-        int currentY = 0;
+        int currentY = 5;
         int maxWidth = 0;
 
         String[] names = {"Speed II", "Regeneration I"};
@@ -99,24 +117,33 @@ public class PotionHUD extends DraggableHUD {
         int[] iconIndices = {1, 10}; // Speed and Regen
 
         for (int i = 0; i < names.length; i++) {
+            int w = 18 + fr.getStringWidth(names[i]);
+            if (w > maxWidth) maxWidth = w;
+        }
+        this.width = Math.max(80, maxWidth + 10);
+        this.height = (names.length * 20) + 5;
+
+        // Draw Background and Border (Foxtrot Theme)
+        net.minecraft.client.gui.Gui.drawRect(0, 0, this.width, this.height, 0x6F000000);
+        drawRectOutline(0, 0, this.width, this.height, 0x44FF0000);
+
+        for (int i = 0; i < names.length; i++) {
+            GlStateManager.pushMatrix();
+            GlStateManager.enableBlend();
+            GlStateManager.enableTexture2D();
             GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-            mc.getTextureManager().bindTexture(new ResourceLocation("textures/gui/container/inventory.png"));
+            mc.getTextureManager().bindTexture(new net.minecraft.util.ResourceLocation("textures/gui/container/inventory.png"));
             int iconX = (iconIndices[i] % 8) * 18;
             int iconY = 198 + (iconIndices[i] / 8) * 18;
             
-            GlStateManager.pushMatrix();
-            GlStateManager.scale(0.6f, 0.6f, 1.0f);
-            mc.ingameGUI.drawTexturedModalRect(0, (int)(currentY / 0.6f) + 2, iconX, iconY, 18, 18);
+            GlStateManager.scale(0.7f, 0.7f, 1.0f);
+            mc.ingameGUI.drawTexturedModalRect(5, (int)(currentY / 0.7f) + 2, iconX, iconY, 18, 18);
             GlStateManager.popMatrix();
 
-            fr.drawStringWithShadow(names[i], 14, currentY, nameColor);
-            fr.drawStringWithShadow(durations[i], 14, currentY + 9, durationColor);
+            fr.drawStringWithShadow(names[i], 20, currentY, nameColor);
+            fr.drawStringWithShadow(durations[i], 20, currentY + 9, durationColor);
 
-            int width = 14 + fr.getStringWidth(names[i]);
-            if (width > maxWidth) maxWidth = width;
             currentY += 20;
         }
-        this.width = maxWidth;
-        this.height = currentY;
     }
 }

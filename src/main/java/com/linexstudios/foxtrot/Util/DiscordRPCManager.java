@@ -52,16 +52,21 @@ public class DiscordRPCManager {
             return;
 
         running = false;
-        try {
-            if (scheduler != null) {
-                scheduler.shutdown();
-                scheduler = null;
+        // Run cleanup in a separate thread to avoid hanging the shutdown hook
+        new Thread(() -> {
+            try {
+                if (scheduler != null) {
+                    scheduler.shutdownNow();
+                    scheduler = null;
+                }
+                if (ipc != null) {
+                    ipc.close();
+                    ipc = null;
+                }
+            } catch (Exception e) {
+                // Ignore errors during final exit
             }
-            if (ipc != null)
-                ipc.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        }, "Foxtrot-Shutdown-Cleanup").start();
     }
 
     public static void updatePresence() {

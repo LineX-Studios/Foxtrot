@@ -17,7 +17,7 @@ public class EditHUDGui extends GuiScreen {
     public static int collapsedX = -1, collapsedY = -1;
     public static boolean panelCollapsed = true, randomDropdownExpanded = false, mathDropdownExpanded = false;
     private int mainPanelX, mainPanelY, selectedTab = 0, lastX, lastY, dragOffsetX = 0, dragOffsetY = 0, activeSlider = 0, resizingCorner = 0;
-    private final int panelW = 380, panelH = 240; 
+    private final int panelW = 380, panelH = 265; 
     private boolean draggingPanel = false, isSnappedX = false, isSnappedY = false;
     private DraggableHUD draggingModule = null, resizingModule = null, lastClickedHUD = null;
     private long lastClickTime = 0;
@@ -95,13 +95,13 @@ public class EditHUDGui extends GuiScreen {
                 int cY = wY + 59; drawSettingsCard(c2, cY, 135, 55); fontRendererObj.drawStringWithShadow(EnumChatFormatting.BOLD + "Chest Stealer", c2 + 5, cY + 5, -1);
                 drawIOSToggle(c2 + 5, cY + 18, 125, "Enabled", ChestStealer.enabled, mX, mY); drawIOSButton(c2 + 5, cY + 36, 125, 14, "Stealer Settings", mX, mY);
             } else if (selectedTab == 5) {
-                drawSettingsCard(c1, y1, 280, 58); 
+                drawSettingsCard(c1, y1, 280, 75); 
                 drawIOSToggle(c1 + 5, y1 + 6, 270, "Enable Telemetry Stats", ConfigHandler.telemetryEnabled, mX, mY); 
                 drawIOSToggle(c1 + 5, y1 + 24, 270, "Global Debug Mode", ConfigHandler.globalDebug, mX, mY);
                 drawIOSToggle(c1 + 5, y1 + 42, 270, "Discord Rich Presence", ConfigHandler.discordRpcEnabled, mX, mY);
-                fontRendererObj.drawStringWithShadow(EnumChatFormatting.GRAY + "Help us improve Foxtrot PIT!", c1 + 5, y1 + 42, -1);
+                fontRendererObj.drawStringWithShadow(EnumChatFormatting.GRAY + "Help us improve Foxtrot PIT!", c1 + 5, y1 + 60, -1);
                 
-                drawSettingsCard(c1, y1 += 63, 280, 125); fontRendererObj.drawStringWithShadow(EnumChatFormatting.RED + "" + EnumChatFormatting.BOLD + "Privacy & Anonymity", c1 + 5, y1 += 5, -1); fontRendererObj.drawString(EnumChatFormatting.GRAY + "All telemetry data is " + EnumChatFormatting.WHITE + "100% Anonymous.", c1 + 5, y1 += 15, -1); fontRendererObj.drawString(EnumChatFormatting.GRAY + "We CANNOT track or collect:", c1 + 5, y1 += 12, -1); fontRendererObj.drawString(EnumChatFormatting.RED + "\u2718 " + EnumChatFormatting.GRAY + "Your Minecraft Name or UUID", c1 + 10, y1 += 10, -1); fontRendererObj.drawString(EnumChatFormatting.RED + "\u2718 " + EnumChatFormatting.GRAY + "Your Session Token or Passwords", c1 + 10, y1 += 10, -1); fontRendererObj.drawString(EnumChatFormatting.RED + "\u2718 " + EnumChatFormatting.GRAY + "Your IP Address or Location", c1 + 10, y1 += 10, -1); fontRendererObj.drawString(EnumChatFormatting.RED + "\u2718 " + EnumChatFormatting.GRAY + "Your Chat Logs or Inventories", c1 + 10, y1 += 10, -1); fontRendererObj.drawString(EnumChatFormatting.GRAY + "We only track active player counts to", c1 + 5, y1 += 15, -1); fontRendererObj.drawString(EnumChatFormatting.GRAY + "display live stats on linex-studios.github.io", c1 + 5, y1 += 10, -1);
+                drawSettingsCard(c1, y1 += 80, 280, 125); fontRendererObj.drawStringWithShadow(EnumChatFormatting.RED + "" + EnumChatFormatting.BOLD + "Privacy & Anonymity", c1 + 5, y1 += 5, -1); fontRendererObj.drawString(EnumChatFormatting.GRAY + "All telemetry data is " + EnumChatFormatting.WHITE + "100% Anonymous.", c1 + 5, y1 += 15, -1); fontRendererObj.drawString(EnumChatFormatting.GRAY + "We CANNOT track or collect:", c1 + 5, y1 += 12, -1); fontRendererObj.drawString(EnumChatFormatting.RED + "\u2718 " + EnumChatFormatting.GRAY + "Your Minecraft Name or UUID", c1 + 10, y1 += 10, -1); fontRendererObj.drawString(EnumChatFormatting.RED + "\u2718 " + EnumChatFormatting.GRAY + "Your Session Token or Passwords", c1 + 10, y1 += 10, -1); fontRendererObj.drawString(EnumChatFormatting.RED + "\u2718 " + EnumChatFormatting.GRAY + "Your IP Address or Location", c1 + 10, y1 += 10, -1); fontRendererObj.drawString(EnumChatFormatting.RED + "\u2718 " + EnumChatFormatting.GRAY + "Your Chat Logs or Inventories", c1 + 10, y1 += 10, -1); fontRendererObj.drawString(EnumChatFormatting.GRAY + "We only track active player counts to", c1 + 5, y1 += 15, -1); fontRendererObj.drawString(EnumChatFormatting.GRAY + "display live stats on linex-studios.github.io", c1 + 5, y1 += 10, -1);
             }
         }
         if (currentTooltip != null) { int sw = fontRendererObj.getStringWidth(currentTooltip), dx = mX + 10, dy = mY - 10; if (dx + sw + 8 > this.width) dx = this.width - sw - 8; RenderUtils.drawRoundedRect(dx, dy, sw + 8, fontRendererObj.FONT_HEIGHT + 8, 3, 0xF9111111); RenderUtils.drawRoundedOutline(dx, dy, sw + 8, fontRendererObj.FONT_HEIGHT + 8, 3, 1, 0x55FFFFFF); fontRendererObj.drawStringWithShadow(currentTooltip, dx + 4, dy + 4, -1); }

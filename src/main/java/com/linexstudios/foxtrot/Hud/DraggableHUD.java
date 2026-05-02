@@ -97,14 +97,14 @@ public abstract class DraggableHUD {
         
         net.minecraft.client.gui.ScaledResolution sr = new net.minecraft.client.gui.ScaledResolution(Minecraft.getMinecraft());
         if (sr.getScaledWidth() != lastScreenWidth || sr.getScaledHeight() != lastScreenHeight) {
-            if (lastScreenWidth == -1) {
-                // First render
-                if (relativeX != -1 && relativeY != -1) {
-                    updateAbsolutePos();
-                } else {
-                    saveRelativePos();
-                }
+            if (lastScreenWidth != -1) {
+                // Screen was resized, update positions based on percentages
+                updateAbsolutePos();
+            } else if (relativeX == -1 || relativeY == -1) {
+                // First render and NO config loaded: save current defaults as relative
+                saveRelativePos();
             } else {
+                // First render but config WAS loaded: just calculate absolute
                 updateAbsolutePos();
             }
             lastScreenWidth = sr.getScaledWidth();
