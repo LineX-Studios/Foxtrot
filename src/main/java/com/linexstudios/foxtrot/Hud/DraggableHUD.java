@@ -12,6 +12,7 @@ public abstract class DraggableHUD {
     private static final List<DraggableHUD> REGISTRY = new ArrayList<>();
 
     public int x, y;
+    public int startX, startY;
     public double relativeX = -1, relativeY = -1; // -1 means uninitialized
     public int width, height;
     public float scale = 1.0f;
@@ -24,6 +25,8 @@ public abstract class DraggableHUD {
 
     public DraggableHUD(String name, int startX, int startY) {
         this.name = name;
+        this.startX = startX;
+        this.startY = startY;
         this.x = startX;
         this.y = startY;
         
@@ -43,8 +46,23 @@ public abstract class DraggableHUD {
             return;
         }
         net.minecraft.client.gui.ScaledResolution sr = new net.minecraft.client.gui.ScaledResolution(Minecraft.getMinecraft());
-        this.x = (int) (relativeX * sr.getScaledWidth());
-        this.y = (int) (relativeY * sr.getScaledHeight());
+        int calcX = (int) (relativeX * sr.getScaledWidth());
+        int calcY = (int) (relativeY * sr.getScaledHeight());
+        
+        // Clamp to screen bounds to prevent off-screen modules
+        int w = width > 0 ? (int)(width * scale) : 50;
+        int h = height > 0 ? (int)(height * scale) : 50;
+        this.x = Math.max(0, Math.min(calcX, sr.getScaledWidth() - w));
+        this.y = Math.max(0, Math.min(calcY, sr.getScaledHeight() - h));
+    }
+
+    public void resetPosition() {
+        this.x = startX;
+        this.y = startY;
+        this.relativeX = -1;
+        this.relativeY = -1;
+        this.scale = 1.0f;
+        saveRelativePos();
     }
 
     /**

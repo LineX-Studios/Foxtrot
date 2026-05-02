@@ -70,7 +70,11 @@ public class NameTags {
             name = name + " " + colorCode + String.format("%.1f", health);
         }
 
-        int width = mc.fontRendererObj.getStringWidth(name) / 2;
+        boolean isFoxtrot = com.linexstudios.foxtrot.Handler.FoxtrotUsersManager.isFoxtrotUser(player.getUniqueID());
+        int logoSpace = isFoxtrot ? 11 : 0;
+        int stringWidth = mc.fontRendererObj.getStringWidth(name);
+        int totalWidth = stringWidth + logoSpace;
+        int halfWidth = totalWidth / 2;
 
         String swordEnchants = EnchantNames.getEnchantsString(player.getHeldItem());
         String pantsEnchants = EnchantNames.getEnchantsString(player.getCurrentArmor(1)); 
@@ -88,7 +92,7 @@ public class NameTags {
         WorldRenderer worldrenderer = tessellator.getWorldRenderer();
         worldrenderer.begin(7, DefaultVertexFormats.POSITION_COLOR);
         
-        drawRect(worldrenderer, -width - 2, -2, width + 2, 11);
+        drawRect(worldrenderer, -halfWidth - 2, -2, halfWidth + 2, 11);
 
         int currentYOffset = -14;
         if (hasSword) {
@@ -106,7 +110,14 @@ public class NameTags {
         GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F); 
         
-        mc.fontRendererObj.drawStringWithShadow(name, -width, 0, -1);
+        int textX = -halfWidth + logoSpace;
+        mc.fontRendererObj.drawStringWithShadow(name, textX, 0, -1);
+        
+        if (isFoxtrot) {
+            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+            mc.getTextureManager().bindTexture(new net.minecraft.util.ResourceLocation("foxtrot", "icons/fx_logo.png"));
+            net.minecraft.client.gui.Gui.drawModalRectWithCustomSizedTexture(-halfWidth, 0, 0, 0, 9, 9, 9, 9);
+        }
         
         currentYOffset = -12;
         if (hasSword) {

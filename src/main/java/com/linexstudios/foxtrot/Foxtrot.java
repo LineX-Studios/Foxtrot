@@ -35,16 +35,19 @@ public class Foxtrot {
         System.setProperty("sun.misc.URLClassPath.disableJarChecking", "true");
 
         ConfigHandler.loadConfig();
+        com.linexstudios.foxtrot.Handler.FoxtrotUsersManager.initialize();
+        com.linexstudios.foxtrot.Handler.CapeManager.loadEmbeddedCapes();
         TelemetryManager.initialize();
         KeybindHandler.init();
-        DiscordRPCManager.start(); // Start anonymous Discord RPC
+        if (ConfigHandler.discordRpcEnabled)
+            DiscordRPCManager.start();
 
         toggleCombatKey = new KeyBinding("Toggle Auto-Clicker", Keyboard.KEY_DOWN, "Foxtrot");
         toggleInvFillKey = new KeyBinding("Toggle Inventory-Fill", Keyboard.KEY_RIGHT, "Foxtrot");
         toggleWtapKey = new KeyBinding("Toggle W-Tap", Keyboard.KEY_NONE, "Foxtrot");
         toggleChestStealerKey = new KeyBinding("Toggle Chest-Stealer", Keyboard.KEY_NONE, "Foxtrot");
         spawnKey = new KeyBinding("Toggle /Spawn Shortcut", Keyboard.KEY_NONE, "Foxtrot");
-        
+
         ClientRegistry.registerKeyBinding(toggleCombatKey);
         ClientRegistry.registerKeyBinding(toggleInvFillKey);
         ClientRegistry.registerKeyBinding(toggleWtapKey);
@@ -74,7 +77,7 @@ public class Foxtrot {
         MinecraftForge.EVENT_BUS.register(NameTags.instance);
         MinecraftForge.EVENT_BUS.register(SessionStatsHUD.instance);
         MinecraftForge.EVENT_BUS.register(TelebowHUD.instance);
-        MinecraftForge.EVENT_BUS.register(VenomTimer.instance); 
+        MinecraftForge.EVENT_BUS.register(VenomTimer.instance);
         MinecraftForge.EVENT_BUS.register(new EnemyESP());
         MinecraftForge.EVENT_BUS.register(new FriendsESP());
         MinecraftForge.EVENT_BUS.register(new TeammateESP());
@@ -83,7 +86,7 @@ public class Foxtrot {
         MinecraftForge.EVENT_BUS.register(PitESP.instance);
         MinecraftForge.EVENT_BUS.register(LowLifeMystic.instance);
         MinecraftForge.EVENT_BUS.register(FocusManager.instance);
-        MinecraftForge.EVENT_BUS.register(AutoClicker.instance); 
+        MinecraftForge.EVENT_BUS.register(AutoClicker.instance);
         MinecraftForge.EVENT_BUS.register(Wtap.instance);
         MinecraftForge.EVENT_BUS.register(ChestStealer.instance);
         MinecraftForge.EVENT_BUS.register(AutoPantSwap.instance);
@@ -92,10 +95,10 @@ public class Foxtrot {
         MinecraftForge.EVENT_BUS.register(AutoQuickMath.instance);
         MinecraftForge.EVENT_BUS.register(RingHelper.instance);
         MinecraftForge.EVENT_BUS.register(NonHighlighter.instance);
-        MinecraftForge.EVENT_BUS.register(EnchantNames.instance); 
-        
-        MinecraftForge.EVENT_BUS.register(WhoGotBanned.instance); 
-        
+        MinecraftForge.EVENT_BUS.register(EnchantNames.instance);
+
+        MinecraftForge.EVENT_BUS.register(WhoGotBanned.instance);
+
         MinecraftForge.EVENT_BUS.register(AutoDenick.instance);
         MinecraftForge.EVENT_BUS.register(NickScanner.instance);
         MinecraftForge.EVENT_BUS.register(new EnemyAlert());
@@ -105,7 +108,7 @@ public class Foxtrot {
         MinecraftForge.EVENT_BUS.register(new SpawnShortcut());
         MinecraftForge.EVENT_BUS.register(DeadLobbyFinder.instance);
         MinecraftForge.EVENT_BUS.register(WorldLoadListener.instance);
-        MinecraftForge.EVENT_BUS.register(ModIDHider.instance); // Stealth: spoof MC|Brand to vanilla
+        MinecraftForge.EVENT_BUS.register(ModIDHider.instance);
         MinecraftForge.EVENT_BUS.register(MapDetectionHandler.instance);
 
         ClientCommandHandler.instance.registerCommand(new CommandFoxtrot());

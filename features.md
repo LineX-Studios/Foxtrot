@@ -15,7 +15,6 @@
     - **Green**: Friends.
     - **Cyan**: Teammates & Guild members.
 
-- **Performance**: Uses Netty packet interception for zero-lag ESP and event tracking.
 
 ## 🔍 Denicking & Identification
 - **Auto-Denick**: Automatically scrapes Hypixel API/History to identify nicked players.
@@ -32,8 +31,6 @@
 ## ⚡ Performance & Stability
 - **FastFont Engine**: LRU-cached string width calculations for massive FPS boost in full 80+ lobbies.
 - **Ghost Filter**: "Double-Verification" system that purges disconnected players and irrelevant NPCs from HUD lists in case they manage to get stuck by accident in any lists they will automatically be removed. and no more whitenames if a player disconnects.
-- **Async Scraper Throttling**: Efficient thread management for background denicking tasks.
-- **Netty Hardening**: Throwable-guarded packet processing to prevent native memory crashes.
 
 ## 🛠️ Utilities
 - **Dead Lobby Finder**: Finds and warps you into low-player lobbies.
@@ -42,4 +39,7 @@
 - **Rank/Name Spoofing**: Customize your local appearance.
 - **Venom Timer**: Track your venom cooldowns.
 - **ModIDHider**: Intercepts the `MC|Brand` handshake packet and rewrites it to `vanilla` — hides Foxtrot from Hypixel server-side mod detection.
-- **Discord Rich Presence**
+- **Discord Rich Presence**: Custom, high-performance integration that shows your current activity on Discord.
+    - **Native-Free**: 100% Java-based implementation (zero external DLLs or native libraries) for maximum stability.
+    - **Fully Toggleable**: Can be turned on or off instantly from the customization menu.
+    - **Self-Refreshing**: Automatically heartbeats to Discord to ensure your status remains visible.

@@ -1,83 +1,82 @@
 package com.linexstudios.foxtrot.Util;
 
-import club.minnced.discord.rpc.DiscordEventHandlers;
-import club.minnced.discord.rpc.DiscordRPC;
-import club.minnced.discord.rpc.DiscordRichPresence;
+import com.linexstudios.foxtrot.Util.discord.DiscordIPC;
 import net.minecraft.client.Minecraft;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class DiscordRPCManager {
 
     private static final String APP_ID = "1485017587875189037";
+    private static DiscordIPC ipc;
     private static boolean running = false;
     private static long startTime = 0;
+    private static ScheduledExecutorService scheduler;
 
     public static void start() {
-        if (running)
+        if (running || !com.linexstudios.foxtrot.Handler.ConfigHandler.discordRpcEnabled)
             return;
 
         try {
-            // Tell JNA where to look for natives inside our jar
-            System.setProperty("jna.library.path", "");
-
-            DiscordRPC lib = DiscordRPC.INSTANCE;
-            DiscordEventHandlers handlers = new DiscordEventHandlers();
-            lib.Discord_Initialize(APP_ID, handlers, true, null);
+            ipc = new DiscordIPC(APP_ID);
+            ipc.connect();
 
             startTime = System.currentTimeMillis() / 1000;
             running = true;
 
-            new Thread(() -> {
-                while (running) {
-                    try {
-                        lib.Discord_RunCallbacks();
-                        updatePresence();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                    try {
-                        Thread.sleep(5000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }, "Foxtrot-RPC-Callback").start();
-        } catch (Throwable t) {
-            System.err.println("Foxtrot: Failed to start Discord RPC.");
-            t.printStackTrace();
+            updatePresence();
 
-            // Send a message to the user if they are in-game
-            new Thread(() -> {
-                try {
-                    // Wait for player to exist
-                    for (int i = 0; i < 20; i++) {
-                        if (Minecraft.getMinecraft().thePlayer != null) {
-                            Minecraft.getMinecraft().thePlayer.addChatMessage(new net.minecraft.util.ChatComponentText(
-                                    "§c[Foxtrot] §7Discord RPC failed to start: §f" + t.getMessage()));
-                            break;
-                        }
-                        Thread.sleep(2000);
-                    }
-                } catch (Exception ignored) {
-                }
-            }).start();
+            // Periodically refresh the presence (every 20 seconds) to ensure it stays
+            // visible
+            // This is what 'Activity Status' toggle mods do to remain active.
+            // Use a daemon thread so the JVM can exit without blocking when the game is closed
+            scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+                Thread t = new Thread(r);
+                t.setDaemon(true);
+                t.setName("Foxtrot-Discord-RPC");
+                return t;
+            });
+            scheduler.scheduleAtFixedRate(DiscordRPCManager::updatePresence, 20, 20, TimeUnit.SECONDS);
+            // Register a shutdown hook to clean up Discord RPC when the JVM exits
+            Runtime.getRuntime().addShutdownHook(new Thread(DiscordRPCManager::stop));
+
+            System.out.println("Foxtrot: Discord RPC started successfully.");
+        } catch (Exception e) {
+            System.err.println("Foxtrot: Failed to start Discord RPC: " + e.getMessage());
         }
     }
 
     public static void stop() {
         if (!running)
             return;
+
         running = false;
-        DiscordRPC.INSTANCE.Discord_Shutdown();
+        try {
+            if (scheduler != null) {
+                scheduler.shutdown();
+                scheduler = null;
+            }
+            if (ipc != null)
+                ipc.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public static void updatePresence() {
-        DiscordRichPresence discordPresence = new DiscordRichPresence();
-        discordPresence.state = "Playing Hypixel Pit";
-        discordPresence.details = "Foxtrot - Hypixel Pit Mod";
-        discordPresence.startTimestamp = startTime;
-        discordPresence.largeImageKey = "foxtrot_logo_512x512";
-        discordPresence.largeImageText = "Foxtrot";
+        if (!running || ipc == null)
+            return;
 
-        DiscordRPC.INSTANCE.Discord_UpdatePresence(discordPresence);
+        try {
+            ipc.setPresence(
+                    "Foxtrot 1.8.9 Pit Mod",
+                    "Playing Hypixel Pit",
+                    startTime,
+                    "foxtrot_logo_512x512",
+                    "Foxtrot");
+        } catch (Exception e) {
+            // Silently attempt to reconnect in the next interval
+        }
     }
 }

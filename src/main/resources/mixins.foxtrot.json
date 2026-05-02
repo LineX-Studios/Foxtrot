@@ -14,7 +14,12 @@
     "MixinGuiUtilRenderComponents",
     "MixinRenderItem",
     "MixinNetworkManager",
-    "IAccessorC17PacketCustomPayload"
+    "IAccessorC17PacketCustomPayload",
+    "MixinAbstractClientPlayer",
+    "MixinGuiPlayerTabOverlay",
+    "MixinRendererLivingEntity",
+    "MixinNetworkPlayerInfo",
+    "MixinLayerCape"
   ],
   "client": [
   ],

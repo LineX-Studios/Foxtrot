@@ -17,34 +17,31 @@ public class FriendsESP {
     public void onRenderWorld(RenderWorldLastEvent event) {
         if (!enabled || mc.theWorld == null || mc.thePlayer == null) return;
 
+        boolean hasFriends = false;
         for (EntityPlayer player : mc.theWorld.playerEntities) {
-            if (player == mc.thePlayer) continue;
-
-            if (player.isDead || player.getHealth() <= 0 || player.isInvisible()) continue;
-
-            if (FriendsHUD.isFriend(player.getUniqueID().toString(), player.getName())) {
-                renderESP(player, event.partialTicks);
+            if (player != mc.thePlayer && !player.isDead && player.getHealth() > 0 && !player.isInvisible() && FriendsHUD.isFriend(player.getUniqueID().toString(), player.getName())) {
+                hasFriends = true;
+                break;
             }
+        }
+
+        if (hasFriends) {
+            RenderUtils.setup3D();
+            for (EntityPlayer player : mc.theWorld.playerEntities) {
+                if (player == mc.thePlayer || player.isDead || player.getHealth() <= 0 || player.isInvisible()) continue;
+                if (FriendsHUD.isFriend(player.getUniqueID().toString(), player.getName())) {
+                    renderESP(player, event.partialTicks);
+                }
+            }
+            RenderUtils.end3D();
         }
     }
 
     private void renderESP(EntityPlayer player, float partialTicks) {
         AxisAlignedBB bb = getInterpolatedBB(player, partialTicks);
-
-        // --- PREPARE GL STATE ---
-        RenderUtils.setup3D();
-
-        // 1. Render translucent green fill
         RenderUtils.drawFilledBox(bb, 0.3F, 1.0F, 0.3F, 0.4F);
-
-        // 2. Render solid green outline
         RenderUtils.drawOutlinedBox(bb, 0.3F, 1.0F, 0.3F, 1.0F, 2.0F);
-
-        // 3. Render green Skeleton Highlighter
         renderSkeleton(player, partialTicks);
-
-        // MORE MR CLEAN
-        RenderUtils.end3D();
     }
 
     private void renderSkeleton(EntityPlayer player, float partialTicks) {

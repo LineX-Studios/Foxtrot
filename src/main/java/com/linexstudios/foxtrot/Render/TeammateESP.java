@@ -17,29 +17,31 @@ public class TeammateESP {
     public void onRenderWorld(RenderWorldLastEvent event) {
         if (!enabled || mc.theWorld == null || mc.thePlayer == null) return;
 
+        boolean hasTeammates = false;
         for (EntityPlayer player : mc.theWorld.playerEntities) {
-            if (player == mc.thePlayer) continue;
-
-            if (player.isDead || player.getHealth() <= 0 || player.isInvisible()) continue;
-
-            if (TeammateManager.isTeammate(player.getUniqueID().toString(), player.getName())) {
-                renderESP(player, event.partialTicks);
+            if (player != mc.thePlayer && !player.isDead && player.getHealth() > 0 && !player.isInvisible() && TeammateManager.isTeammate(player.getUniqueID().toString(), player.getName())) {
+                hasTeammates = true;
+                break;
             }
+        }
+
+        if (hasTeammates) {
+            RenderUtils.setup3D();
+            for (EntityPlayer player : mc.theWorld.playerEntities) {
+                if (player == mc.thePlayer || player.isDead || player.getHealth() <= 0 || player.isInvisible()) continue;
+                if (TeammateManager.isTeammate(player.getUniqueID().toString(), player.getName())) {
+                    renderESP(player, event.partialTicks);
+                }
+            }
+            RenderUtils.end3D();
         }
     }
 
     private void renderESP(EntityPlayer player, float partialTicks) {
         AxisAlignedBB bb = getInterpolatedBB(player, partialTicks);
-
-        RenderUtils.setup3D();
-
-        // Cyan Color: 0.0, 1.0, 1.0
         RenderUtils.drawFilledBox(bb, 0.0F, 1.0F, 1.0F, 0.4F);
         RenderUtils.drawOutlinedBox(bb, 0.0F, 1.0F, 1.0F, 1.0F, 2.0F);
-
         renderSkeleton(player, partialTicks);
-
-        RenderUtils.end3D();
     }
 
     private void renderSkeleton(EntityPlayer player, float partialTicks) {

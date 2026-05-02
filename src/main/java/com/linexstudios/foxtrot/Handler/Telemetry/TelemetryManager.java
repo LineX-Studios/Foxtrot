@@ -68,7 +68,21 @@ public class TelemetryManager {
                     modVersion = "0.7.4"; 
                 }
 
-                String jsonPayload = "{\"anonId\": \"" + anonymousClientId + "\", \"version\": \"" + modVersion + "\"}";
+                String playerHash = "";
+                try {
+                    String rawUuid = net.minecraft.client.Minecraft.getMinecraft().getSession().getPlayerID().replace("-", "").toLowerCase();
+                    java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
+                    byte[] hash = digest.digest(rawUuid.getBytes(StandardCharsets.UTF_8));
+                    StringBuilder hexString = new StringBuilder();
+                    for (byte b : hash) {
+                        String hex = Integer.toHexString(0xff & b);
+                        if(hex.length() == 1) hexString.append('0');
+                        hexString.append(hex);
+                    }
+                    playerHash = hexString.toString();
+                } catch (Exception ignored) {}
+
+                String jsonPayload = "{\"anonId\": \"" + anonymousClientId + "\", \"version\": \"" + modVersion + "\", \"hash\": \"" + playerHash + "\", \"cape\": \"" + com.linexstudios.foxtrot.Handler.ConfigHandler.selectedCape + "\"}";
 
                 try (OutputStream os = conn.getOutputStream()) {
                     byte[] input = jsonPayload.getBytes(StandardCharsets.UTF_8);

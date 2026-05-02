@@ -52,3 +52,4 @@
 
 ## Stealth
 - `/fx modidhider` - Toggle spoofing the client brand to "vanilla" to avoid mod detection on Hypixel.
+- `/fx rpc` - Toggle the Discord Rich Presence (Alias for the setting button).

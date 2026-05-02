@@ -18,25 +18,31 @@ public class EnemyESP {
     public void onRenderWorld(RenderWorldLastEvent event) {
         if (!enabled || mc.theWorld == null || mc.thePlayer == null) return;
 
+        boolean hasEnemies = false;
         for (EntityPlayer player : mc.theWorld.playerEntities) {
-            if (player == mc.thePlayer) continue;
-
-            if (player.isDead || player.getHealth() <= 0 || player.isInvisible()) continue;
-
-            // FIXED: Pass the player's name as a String, not the EntityPlayer object
-            if (EnemyHUD.isTarget(player.getName())) {
-                renderESP(player, event.partialTicks);
+            if (player != mc.thePlayer && !player.isDead && player.getHealth() > 0 && !player.isInvisible() && EnemyHUD.isTarget(player.getName())) {
+                hasEnemies = true;
+                break;
             }
+        }
+
+        if (hasEnemies) {
+            RenderUtils.setup3D();
+            for (EntityPlayer player : mc.theWorld.playerEntities) {
+                if (player == mc.thePlayer || player.isDead || player.getHealth() <= 0 || player.isInvisible()) continue;
+                if (EnemyHUD.isTarget(player.getName())) {
+                    renderESP(player, event.partialTicks);
+                }
+            }
+            RenderUtils.end3D();
         }
     }
 
     private void renderESP(EntityPlayer player, float partialTicks) {
         AxisAlignedBB bb = getInterpolatedBB(player, partialTicks);
-        RenderUtils.setup3D();
         RenderUtils.drawFilledBox(bb, 1.0F, 0.3F, 0.3F, 0.4F);
         RenderUtils.drawOutlinedBox(bb, 1.0F, 0.3F, 0.3F, 1.0F, 2.0F);
         renderSkeleton(player, partialTicks);
-        RenderUtils.end3D();
     }
 
     private void renderSkeleton(EntityPlayer player, float partialTicks) {

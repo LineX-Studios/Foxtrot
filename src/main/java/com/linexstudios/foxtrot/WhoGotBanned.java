@@ -31,7 +31,8 @@ public class WhoGotBanned {
 
     @SubscribeEvent
     public void onTick(TickEvent.ClientTickEvent event) {
-        if (event.phase != TickEvent.Phase.END || mc.theWorld == null || mc.getNetHandler() == null) return;
+        if (event.phase != TickEvent.Phase.END || mc.theWorld == null || mc.getNetHandler() == null)
+            return;
 
         Set<String> currentPlayers = new HashSet<>();
 
@@ -39,14 +40,16 @@ public class WhoGotBanned {
         for (NetworkPlayerInfo info : mc.getNetHandler().getPlayerInfoMap()) {
             if (info != null && info.getGameProfile() != null && info.getGameProfile().getName() != null) {
                 String name = info.getGameProfile().getName();
-                // Filter out NPCs/Holograms (they usually start with color codes in the tab logic)
+                // Filter out NPCs/Holograms (they usually start with color codes in the tab
+                // logic)
                 if (!name.startsWith("§")) {
                     currentPlayers.add(name);
                 }
             }
         }
 
-        // If previousPlayers is empty, it means we just joined the lobby. Just sync and return to avoid false positives.
+        // If previousPlayers is empty, it means we just joined the lobby. Just sync and
+        // return to avoid false positives.
         if (previousPlayers.isEmpty()) {
             previousPlayers.addAll(currentPlayers);
             return;
@@ -64,23 +67,26 @@ public class WhoGotBanned {
         previousPlayers.clear();
         previousPlayers.addAll(currentPlayers);
 
-        // Cleanup: Delete anyone from the memory bank who left more than 5 seconds ago
+        // Cleanup: Delete anyone from the memory bank who left more than 15 seconds ago
+        // (expanded for lag safety)
         long now = System.currentTimeMillis();
-        recentlyLeft.entrySet().removeIf(entry -> now - entry.getValue() > 5000);
+        recentlyLeft.entrySet().removeIf(entry -> now - entry.getValue() > 15000);
     }
 
     @SubscribeEvent
     public void onChat(ClientChatReceivedEvent event) {
-        if (event.type == 2) return; // Ignore action bar messages (like health or mana)
+        if (event.type == 2)
+            return; // Ignore action bar messages (like health or mana)
 
         // Strip the formatting so we can read the raw text easily
         String unformatted = EnumChatFormatting.getTextWithoutFormattingCodes(event.message.getUnformattedText());
 
         // Check for Hypixel's exact Watchdog ban messages
         if (unformatted.contains("A player has been removed from your game") ||
-            unformatted.contains("A player has been removed from your lobby")) {
+                unformatted.contains("A player has been removed from your lobby")) {
 
-            // The ban message just hit! Let's find the person who vanished closest to this exact millisecond.
+            // The ban message just hit! Let's find the person who vanished closest to this
+            // exact millisecond.
             String bannedPlayer = "Unknown (Too Fast)";
             long closestTime = Long.MAX_VALUE;
 
@@ -96,37 +102,39 @@ public class WhoGotBanned {
             // --- TRIGGER THE CHAT ALERT ---
             if (mc.thePlayer != null) {
                 mc.thePlayer.addChatMessage(new ChatComponentText(
-                        EnumChatFormatting.GRAY + "[" + 
-                        EnumChatFormatting.RED + "Foxtrot" + 
-                        EnumChatFormatting.GRAY + "] " + 
-                        EnumChatFormatting.YELLOW + "\u26A0 " + // warning symbol
-                        EnumChatFormatting.RED + "" + EnumChatFormatting.BOLD + bannedPlayer + " " + 
-                        EnumChatFormatting.GOLD + "Has been banned!"
-                ));
+                        EnumChatFormatting.GRAY + "[" +
+                                EnumChatFormatting.RED + "Foxtrot" +
+                                EnumChatFormatting.GRAY + "] " +
+                                EnumChatFormatting.YELLOW + "\u26A0 " + // warning symbol
+                                EnumChatFormatting.RED + "" + EnumChatFormatting.BOLD + bannedPlayer + " " +
+                                EnumChatFormatting.GOLD + "Has been banned!"));
             }
 
-            // --- TRIGGER THE DISCORD API ---
             if (!bannedPlayer.equals("Unknown (Too Fast)")) {
                 sendBanToDiscord(bannedPlayer);
-            }
 
-            // Clear the map so we don't accidentally flag the same person twice if the server lags
-            recentlyLeft.clear();
+                // FIX: Only remove the player we just banned!
+                // Do NOT clear the whole map. If 3 people are banned at the same millisecond,
+                // the next 2 chat messages will correctly match the remaining 2 players in the
+                // map!
+                recentlyLeft.remove(bannedPlayer);
+            }
         }
     }
 
     private void sendBanToDiscord(String username) {
-        if (username == null || username.isEmpty()) return;
+        if (username == null || username.isEmpty())
+            return;
 
         new Thread(() -> {
             try {
                 URL url = new URL(PROXY_API_URL);
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                
+
                 conn.setRequestMethod("POST");
                 conn.setRequestProperty("Content-Type", "application/json; utf-8");
                 conn.setRequestProperty("Accept", "application/json");
-                conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"); 
+                conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
                 conn.setDoOutput(true);
 
                 String jsonInputString = "{\"username\": \"" + username + "\"}";
