@@ -1,14 +1,14 @@
 # Foxtrot-PIT
 
-[![Foxtrot Version](https://img.shields.io/github/v/tag/LineX-Studios/FOXTROT-PIT?label=Foxtrot&color=blue&style=flat-square)](https://github.com/LineX-Studios/FOXTROT-PIT/releases/latest)
-[![Build Status](https://github.com/LineX-Studios/FOXTROT-PIT/actions/workflows/build.yml/badge.svg)](https://github.com/LineX-Studios/FOXTROT-PIT/actions)
+[![Foxtrot Version](https://img.shields.io/github/v/tag/LineX-Studios/Foxtrot?label=Foxtrot&color=blue&style=flat-square)](https://github.com/LineX-Studios/Foxtrot/releases/latest)
+[![Build Status](https://github.com/LineX-Studios/FOXTROT-PIT/actions/workflows/build.yml/badge.svg)](https://github.com/LineX-Studios/Foxtrot/actions)
 ![Minecraft Version](https://img.shields.io/badge/Minecraft-1.8.9-gray?style=flat-square)
-[![Total Downloads](https://img.shields.io/github/downloads/LineX-Studios/FOXTROT-PIT/total.svg)]([https://github.com/linexstudios/foxtrot/](https://github.com/LineX-Studios/FOXTROT-PIT/)releases)
+[![Total Downloads](https://img.shields.io/github/downloads/LineX-Studios/Foxtrot/total.svg)]([https://github.com/linexstudios/foxtrot/](https://github.com/LineX-Studios/Foxtrot/)releases)
 
 [![Discord](https://img.shields.io/badge/Discord-7289DA?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/3mDn6vcTuK)
 
 
-# END OF LIFE - NO MORE UPDATES / MOD SUPPORT
+# END OF LIFE - NO MORE UPDATES / MOD SUPPORT AFTER VERSION 1.0.3 RELEASES.
 
 Foxtrot is a highly optimized, open-source utility mod  exclusively for 1.8.9 Forge. Built or Hypixel Pit, it adds quality-of-life features, including, automated ban tracking, Enemy List, Friends List, Darks List and more.
 
