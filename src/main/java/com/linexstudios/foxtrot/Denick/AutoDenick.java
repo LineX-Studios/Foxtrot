@@ -1,7 +1,6 @@
 package com.linexstudios.foxtrot.Denick;
 
 import com.linexstudios.foxtrot.Handler.ConfigHandler;
-import com.linexstudios.foxtrot.Hud.EnemyHUD;
 import com.linexstudios.foxtrot.Hud.NickedHUD;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.network.NetworkPlayerInfo;
@@ -46,7 +45,7 @@ public class AutoDenick {
         if (!enabled || mc.theWorld == null || mc.getNetHandler() == null || event.phase != TickEvent.Phase.END) return;
 
         tickTimer++;
-        if (tickTimer >= 40) { // Runs every 2 seconds
+        if (tickTimer >= 10) { // Runs every 0.5 seconds
             tickTimer = 0;
             detectIfPlayerIsNicked();
         }
@@ -59,16 +58,16 @@ public class AutoDenick {
     public static void detectIfPlayerIsNicked() {
         Set<String> currentNickedSet = new HashSet<>();
         
-        for (NetworkPlayerInfo info : mc.getNetHandler().getPlayerInfoMap()) {
+        for (EntityPlayer p : mc.theWorld.playerEntities) {
+            if (p == null) continue;
+            
+            String nick = p.getName();
+            NetworkPlayerInfo info = mc.getNetHandler().getPlayerInfo(nick);
             if (info == null || info.getGameProfile() == null || info.getGameProfile().getId() == null) continue;
             
             UUID playerUUID = info.getGameProfile().getId();
             if (isNicked(playerUUID)) {
-                String nick = info.getGameProfile().getName();
                 currentNickedSet.add(nick);
-                
-                EntityPlayer p = mc.theWorld.getPlayerEntityByName(nick);
-                if (p == null) continue; 
                 
                 String currentStatus = NickedManager.getResolvedIGN(nick);
                 boolean needsDenick = currentStatus == null || currentStatus.equals("Failed") || currentStatus.contains("No Nonce") || currentStatus.equals("Scraping");
@@ -84,12 +83,16 @@ public class AutoDenick {
                     }
 
                     long lastAttempt = retryCooldowns.getOrDefault(nick, 0L);
-                    if (System.currentTimeMillis() - lastAttempt >= 20000) {
+                    if (System.currentTimeMillis() - lastAttempt >= 5000) { // Retry every 5 seconds if scraping fails or no nonce
                         try {
                             int foundNonce = -1;
                             List<ItemStack> itemsToCheck = new ArrayList<>();
+                            
+                            // Client only knows about other players' armor and held item. mainInventory is empty for others.
                             Collections.addAll(itemsToCheck, p.inventory.armorInventory);
-                            Collections.addAll(itemsToCheck, p.inventory.mainInventory);
+                            if (p.getCurrentEquippedItem() != null) {
+                                itemsToCheck.add(p.getCurrentEquippedItem());
+                            }
 
                             boolean hasMystic = false;
                             for (ItemStack item : itemsToCheck) {

@@ -27,6 +27,7 @@ public abstract class MixinRendererLivingEntity extends Render<EntityLivingBase>
     @Inject(method = "renderName(Lnet/minecraft/entity/EntityLivingBase;DDD)V", at = @At("HEAD"), cancellable = true)
     private void onRenderName(EntityLivingBase entityIn, double x, double y, double z, CallbackInfo ci) {
         if (entityIn instanceof AbstractClientPlayer && FoxtrotUsersManager.isFoxtrotUser(entityIn.getUniqueID())) {
+            if (com.linexstudios.foxtrot.Hud.NameTags.enabled) return;
             double d0 = entityIn.getDistanceSqToEntity(this.renderManager.livingPlayer);
 
             if (d0 <= (double)(64 * 64)) {

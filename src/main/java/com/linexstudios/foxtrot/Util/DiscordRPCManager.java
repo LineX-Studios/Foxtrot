@@ -1,7 +1,6 @@
 package com.linexstudios.foxtrot.Util;
 
 import com.linexstudios.foxtrot.Util.discord.DiscordIPC;
-import net.minecraft.client.Minecraft;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -53,7 +52,7 @@ public class DiscordRPCManager {
 
         running = false;
         // Run cleanup in a separate thread to avoid hanging the shutdown hook
-        new Thread(() -> {
+        Thread cleanupThread = new Thread(() -> {
             try {
                 if (scheduler != null) {
                     scheduler.shutdownNow();
@@ -66,7 +65,9 @@ public class DiscordRPCManager {
             } catch (Exception e) {
                 // Ignore errors during final exit
             }
-        }, "Foxtrot-Shutdown-Cleanup").start();
+        }, "Foxtrot-Shutdown-Cleanup");
+        cleanupThread.setDaemon(true);
+        cleanupThread.start();
     }
 
     public static void updatePresence() {

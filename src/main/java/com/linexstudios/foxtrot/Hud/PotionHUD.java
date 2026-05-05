@@ -1,14 +1,11 @@
 package com.linexstudios.foxtrot.Hud;
 
-import com.linexstudios.foxtrot.Handler.ConfigHandler;
 import com.linexstudios.foxtrot.Handler.MapDetectionHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionEffect;
-import net.minecraft.util.EnumChatFormatting;
-import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
@@ -65,10 +62,6 @@ public class PotionHUD extends DraggableHUD {
         this.width = Math.max(80, maxWidth + 10);
         this.height = (effects.size() * 20) + 5;
 
-        // Draw Background and Border (Foxtrot Theme)
-        net.minecraft.client.gui.Gui.drawRect(0, 0, this.width, this.height, 0x6F000000);
-        drawRectOutline(0, 0, this.width, this.height, 0x44FF0000);
-
         for (PotionEffect effect : effects) {
             Potion potion = Potion.potionTypes[effect.getPotionID()];
             String name = net.minecraft.client.resources.I18n.format(potion.getName());
@@ -89,7 +82,8 @@ public class PotionHUD extends DraggableHUD {
                 int iconY = 198 + (iconIndex / 8) * 18;
                 
                 GlStateManager.scale(0.7f, 0.7f, 1.0f);
-                mc.ingameGUI.drawTexturedModalRect(5, (int)(currentY / 0.7f) + 2, iconX, iconY, 18, 18);
+                net.minecraft.client.gui.Gui gui = new net.minecraft.client.gui.Gui();
+                gui.drawTexturedModalRect((int)(5 / 0.7f), (int)(currentY / 0.7f) + 2, iconX, iconY, 18, 18);
                 GlStateManager.popMatrix();
             }
 
@@ -100,12 +94,7 @@ public class PotionHUD extends DraggableHUD {
         }
     }
 
-    private void drawRectOutline(int x, int y, int w, int h, int color) {
-        net.minecraft.client.gui.Gui.drawRect(x, y, x + w, y + 1, color);
-        net.minecraft.client.gui.Gui.drawRect(x, y + h - 1, x + w, y + h, color);
-        net.minecraft.client.gui.Gui.drawRect(x, y, x + 1, y + h, color);
-        net.minecraft.client.gui.Gui.drawRect(x + w - 1, y, x + w, y + h, color);
-    }
+
 
     private void drawDummyPotions() {
         FontRenderer fr = mc.fontRendererObj;
@@ -123,10 +112,6 @@ public class PotionHUD extends DraggableHUD {
         this.width = Math.max(80, maxWidth + 10);
         this.height = (names.length * 20) + 5;
 
-        // Draw Background and Border (Foxtrot Theme)
-        net.minecraft.client.gui.Gui.drawRect(0, 0, this.width, this.height, 0x6F000000);
-        drawRectOutline(0, 0, this.width, this.height, 0x44FF0000);
-
         for (int i = 0; i < names.length; i++) {
             GlStateManager.pushMatrix();
             GlStateManager.enableBlend();
@@ -137,7 +122,8 @@ public class PotionHUD extends DraggableHUD {
             int iconY = 198 + (iconIndices[i] / 8) * 18;
             
             GlStateManager.scale(0.7f, 0.7f, 1.0f);
-            mc.ingameGUI.drawTexturedModalRect(5, (int)(currentY / 0.7f) + 2, iconX, iconY, 18, 18);
+            net.minecraft.client.gui.Gui gui = new net.minecraft.client.gui.Gui();
+            gui.drawTexturedModalRect((int)(5 / 0.7f), (int)(currentY / 0.7f) + 2, iconX, iconY, 18, 18);
             GlStateManager.popMatrix();
 
             fr.drawStringWithShadow(names[i], 20, currentY, nameColor);

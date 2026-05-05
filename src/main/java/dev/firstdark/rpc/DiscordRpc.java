@@ -205,6 +205,7 @@ public class DiscordRpc {
                     this.discordRpcIo();
                 } catch (NoDiscordClientException ignored) {}
             });
+            this.ioThread.setDaemon(true);
             this.ioThread.start();
         }
     }

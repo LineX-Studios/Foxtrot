@@ -6,6 +6,7 @@ import com.linexstudios.foxtrot.Combat.*;
 import com.linexstudios.foxtrot.Render.*;
 import com.linexstudios.foxtrot.Misc.*;
 import com.linexstudios.foxtrot.Enemy.EnemyESP;
+import com.linexstudios.foxtrot.Handler.Telemetry.TelemetryManager;
 import net.minecraft.client.gui.*;
 import net.minecraft.client.renderer.*;
 import net.minecraft.util.EnumChatFormatting;
@@ -99,7 +100,7 @@ public class EditHUDGui extends GuiScreen {
                 drawIOSToggle(c1 + 5, y1 + 6, 270, "Enable Telemetry Stats", ConfigHandler.telemetryEnabled, mX, mY); 
                 drawIOSToggle(c1 + 5, y1 + 24, 270, "Global Debug Mode", ConfigHandler.globalDebug, mX, mY);
                 drawIOSToggle(c1 + 5, y1 + 42, 270, "Discord Rich Presence", ConfigHandler.discordRpcEnabled, mX, mY);
-                fontRendererObj.drawStringWithShadow(EnumChatFormatting.GRAY + "Help us improve Foxtrot PIT!", c1 + 5, y1 + 60, -1);
+
                 
                 drawSettingsCard(c1, y1 += 80, 280, 125); fontRendererObj.drawStringWithShadow(EnumChatFormatting.RED + "" + EnumChatFormatting.BOLD + "Privacy & Anonymity", c1 + 5, y1 += 5, -1); fontRendererObj.drawString(EnumChatFormatting.GRAY + "All telemetry data is " + EnumChatFormatting.WHITE + "100% Anonymous.", c1 + 5, y1 += 15, -1); fontRendererObj.drawString(EnumChatFormatting.GRAY + "We CANNOT track or collect:", c1 + 5, y1 += 12, -1); fontRendererObj.drawString(EnumChatFormatting.RED + "\u2718 " + EnumChatFormatting.GRAY + "Your Minecraft Name or UUID", c1 + 10, y1 += 10, -1); fontRendererObj.drawString(EnumChatFormatting.RED + "\u2718 " + EnumChatFormatting.GRAY + "Your Session Token or Passwords", c1 + 10, y1 += 10, -1); fontRendererObj.drawString(EnumChatFormatting.RED + "\u2718 " + EnumChatFormatting.GRAY + "Your IP Address or Location", c1 + 10, y1 += 10, -1); fontRendererObj.drawString(EnumChatFormatting.RED + "\u2718 " + EnumChatFormatting.GRAY + "Your Chat Logs or Inventories", c1 + 10, y1 += 10, -1); fontRendererObj.drawString(EnumChatFormatting.GRAY + "We only track active player counts to", c1 + 5, y1 += 15, -1); fontRendererObj.drawString(EnumChatFormatting.GRAY + "display live stats on linex-studios.github.io", c1 + 5, y1 += 10, -1);
             }
@@ -146,6 +147,11 @@ public class EditHUDGui extends GuiScreen {
                 } else if(selectedTab==5) { 
                     if(isInside(mX, mY, c1+5, y1+6, 270, 12)) { ConfigHandler.telemetryEnabled=!ConfigHandler.telemetryEnabled; if(ConfigHandler.telemetryEnabled) TelemetryManager.initialize(); }
                     if(isInside(mX, mY, c1+5, y1+24, 270, 12)) { ConfigHandler.globalDebug=!ConfigHandler.globalDebug; }
+                    if(isInside(mX, mY, c1+5, y1+42, 270, 12)) { 
+                        ConfigHandler.discordRpcEnabled=!ConfigHandler.discordRpcEnabled; 
+                        if(ConfigHandler.discordRpcEnabled) com.linexstudios.foxtrot.Util.DiscordRPCManager.start(); 
+                        else com.linexstudios.foxtrot.Util.DiscordRPCManager.stop();
+                    }
                 }
             }
         } super.mouseClicked(mouseX, mouseY, mouseButton);

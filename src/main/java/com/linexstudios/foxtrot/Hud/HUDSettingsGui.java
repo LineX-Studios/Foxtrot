@@ -25,7 +25,7 @@ public class HUDSettingsGui extends GuiScreen {
     private long lastClickTime = 0;
     private DraggableHUD lastClickedHUD = null, resizingModule = null;
     private int[] pal = {0xFFFFFF, 0xAAAAAA, 0x555555, 0xFF5555, 0x55FF55, 0x5555FF, 0xFFFF55, 0x55FFFF, 0xFFAA00, 0xFF55FF, 0x000000};
-    private final int COLOR_ENABLED = 0xFF28A061, COLOR_DISABLED = 0xFFB82C35, COLOR_TEXT_SECONDARY = 0xFFAAAAAA, COLOR_SEPARATOR = 0x44FFFFFF, COLOR_CARD_BG = 0x44000000, COLOR_CARD_BG_HOVER = 0x66000000, COLOR_BTN_HOVER_OVERLAY = 0x22FFFFFF;
+    private final int COLOR_ENABLED = 0xFF28A061, COLOR_DISABLED = 0xFFB82C35, COLOR_TEXT_SECONDARY = 0xFFAAAAAA, COLOR_CARD_BG = 0x44000000, COLOR_CARD_BG_HOVER = 0x66000000, COLOR_BTN_HOVER_OVERLAY = 0x22FFFFFF;
 
     public HUDSettingsGui(GuiScreen p) { this.prev = p; }
     public HUDSettingsGui(GuiScreen p, int d) { this.prev = p; this.sel = d; this.inSettings = true; }
@@ -75,7 +75,7 @@ public class HUDSettingsGui extends GuiScreen {
                 case 11: RenderUtils.drawRoundedRect(rX,rY,360,70,4,0x33000000); drawTgl(rX+10, rY+8, 340, "Show Background", CPSModule.showBackground, mX, mY); RenderUtils.drawSolidRect(rX+10, rY+28, 340, 1, 0x11FFFFFF); fontRendererObj.drawStringWithShadow("Text Color", rX+10, rY+36, 0xDDDDDD); drawPal(rX+10, rY+49, CPSModule.textColor, mX, mY, 8); break;
                 case 12: RenderUtils.drawRoundedRect(rX,rY,360,70,4,0x33000000); drawTgl(rX+10, rY+8, 340, "Show Background", FPSModule.showBackground, mX, mY); RenderUtils.drawSolidRect(rX+10, rY+28, 340, 1, 0x11FFFFFF); fontRendererObj.drawStringWithShadow("Text Color", rX+10, rY+36, 0xDDDDDD); drawPal(rX+10, rY+49, FPSModule.textColor, mX, mY, 10); break;
                 case 15: RenderUtils.drawRoundedRect(rX,rY,360,85,4,0x33000000); fontRendererObj.drawStringWithShadow("Prefix Color", rX+10, rY+10, 0xDDDDDD); drawPal(rX+10, rY+23, PlayerCounterHUD.prefixColor, mX, mY, 11); fontRendererObj.drawStringWithShadow("Number Color", rX+10, rY+50, 0xDDDDDD); drawPal(rX+10, rY+63, PlayerCounterHUD.countColor, mX, mY, 12); break;
-                case 17: RenderUtils.drawRoundedRect(rX,rY,360,60,4,0x33000000); fontRendererObj.drawStringWithShadow("Delay (Ticks)", rX+10, rY+12, 0xDDDDDD); drawSld(rX+80, rY+10, Wtap.delay, 0, 10, 270); fontRendererObj.drawStringWithShadow("Duration (Ticks)", rX+10, rY+37, 0xDDDDDD); drawSld(rX+100, rY+35, Wtap.duration, 1, 5, 250); break;
+                case 17: RenderUtils.drawRoundedRect(rX,rY,360,105,4,0x33000000); fontRendererObj.drawStringWithShadow("Chance %", rX+10, rY+12, 0xDDDDDD); drawSld(rX+70, rY+10, Wtap.chance, 0, 100, 280); fontRendererObj.drawStringWithShadow("Release Delay (ms)", rX+10, rY+32, 0xDDDDDD); drawSld(rX+115, rY+30, Wtap.releaseDelay, 1, 500, 235); fontRendererObj.drawStringWithShadow("Repress Delay (ms)", rX+10, rY+52, 0xDDDDDD); drawSld(rX+115, rY+50, Wtap.repressDelay, 1, 500, 235); drawTgl(rX+10, rY+70, 340, "Select Hits (Combo Only)", Wtap.selectHits, mX, mY); break;
                 case 18: RenderUtils.drawRoundedRect(rX,rY,360,175,4,0x33000000); fontRendererObj.drawStringWithShadow("Min Delay", rX+10, rY+12, 0xDDDDDD); drawSld(rX+70, rY+10, ChestStealer.minDelay, 0, 20, 280); fontRendererObj.drawStringWithShadow("Max Delay", rX+10, rY+32, 0xDDDDDD); drawSld(rX+70, rY+30, ChestStealer.maxDelay, 0, 20, 280); fontRendererObj.drawStringWithShadow("Open Delay", rX+10, rY+52, 0xDDDDDD); drawSld(rX+75, rY+50, ChestStealer.openDelay, 0, 20, 275); drawTgl(rX+10, rY+70, 340, "Auto Close", ChestStealer.autoClose, mX, mY); drawTgl(rX+10, rY+90, 340, "Name Check", ChestStealer.nameCheck, mX, mY); drawTgl(rX+10, rY+110, 340, "Skip Trash", ChestStealer.skipTrash, mX, mY); drawTgl(rX+10, rY+130, 340, "More Armor", ChestStealer.moreArmor, mX, mY); drawTgl(rX+10, rY+150, 340, "More Sword", ChestStealer.moreSword, mX, mY); break;
             }
             if (colorTgt != -1) drawClr(pX, pY, mX, mY);
@@ -112,7 +112,7 @@ public class HUDSettingsGui extends GuiScreen {
                 case 11: if(in(mX,mY,rX+10,rY+8,340,14)) CPSModule.showBackground=!CPSModule.showBackground; for(int i=0;i<11;i++) if(in(mX,mY,rX+10+(i*22),rY+49,12,12)){if(i==10)oPal(8,rX+10+(i*22),rY+49,CPSModule.textColor);else CPSModule.textColor=pal[i];return;} break;
                 case 12: if(in(mX,mY,rX+10,rY+8,340,14)) FPSModule.showBackground=!FPSModule.showBackground; for(int i=0;i<11;i++) if(in(mX,mY,rX+10+(i*22),rY+49,12,12)){if(i==10)oPal(10,rX+10+(i*22),rY+49,FPSModule.textColor);else FPSModule.textColor=pal[i];return;} break;
                 case 15: for(int i=0;i<11;i++){ if(in(mX,mY,rX+10+(i*22),rY+23,12,12)){if(i==10)oPal(11,rX+10+(i*22),rY+23,PlayerCounterHUD.prefixColor);else PlayerCounterHUD.prefixColor=pal[i];return;} if(in(mX,mY,rX+10+(i*22),rY+63,12,12)){if(i==10)oPal(12,rX+10+(i*22),rY+63,PlayerCounterHUD.countColor);else PlayerCounterHUD.countColor=pal[i];return;} } break;
-                case 17: if(in(mX,mY,rX+80,rY+14,270,15)) { aSld=1; return; } if(in(mX,mY,rX+100,rY+39,250,15)) { aSld=2; return; } break;
+                case 17: if(in(mX,mY,rX+70,rY+14,280,15)) { aSld=1; return; } if(in(mX,mY,rX+115,rY+34,235,15)) { aSld=2; return; } if(in(mX,mY,rX+115,rY+54,235,15)) { aSld=6; return; } if(in(mX,mY,rX+10,rY+70,340,14)) Wtap.selectHits=!Wtap.selectHits; break;
                 case 18: if(in(mX,mY,rX+70,rY+14,280,15)) { aSld=3; return; } if(in(mX,mY,rX+70,rY+34,280,15)) { aSld=4; return; } if(in(mX,mY,rX+75,rY+54,275,15)) { aSld=5; return; } if(in(mX,mY,rX+10,rY+70,340,14)) ChestStealer.autoClose=!ChestStealer.autoClose; if(in(mX,mY,rX+10,rY+90,340,14)) ChestStealer.nameCheck=!ChestStealer.nameCheck; if(in(mX,mY,rX+10,rY+110,340,14)) ChestStealer.skipTrash=!ChestStealer.skipTrash; if(in(mX,mY,rX+10,rY+130,340,14)) ChestStealer.moreArmor=!ChestStealer.moreArmor; if(in(mX,mY,rX+10,rY+150,340,14)) ChestStealer.moreSword=!ChestStealer.moreSword; break;
             }
         }
@@ -150,8 +150,9 @@ public class HUDSettingsGui extends GuiScreen {
         else if(aSld != -1) {
             if(aSld==0) { DraggableHUD[] h={PotionHUD.instance, ArmorHUD.instance, CoordsHUD.instance, EnemyHUD.instance, NickedHUD.instance, FriendsHUD.instance, SessionStatsHUD.instance, EventHUD.instance, RegHUD.instance, DarksHUD.instance, ToggleSprintModule.instance, CPSModule.instance, FPSModule.instance, BossBarModule.instance, TelebowHUD.instance, PlayerCounterHUD.instance, VenomTimer.instance}; if(sel<h.length) h[sel].scale=0.5f+(Math.max(0, Math.min(1, (mX-(rX+80))/210f))); }
             else if(aSld==7) ToggleSprintModule.instance.flyBoostAmount=1f+(9f*Math.max(0, Math.min(1, (mX-(rX+80))/250f)));
-            else if(aSld==1) Wtap.delay=Math.round(Math.max(0, Math.min(1, (mX-(rX+80))/270f))*10f);
-            else if(aSld==2) Wtap.duration=Math.round(1f+Math.max(0, Math.min(1, (mX-(rX+100))/250f))*4f);
+            else if(aSld==1) Wtap.chance=Math.round(Math.max(0, Math.min(1, (mX-(rX+70))/280f))*100f);
+            else if(aSld==2) Wtap.releaseDelay=Math.round(1f+Math.max(0, Math.min(1, (mX-(rX+115))/235f))*499f);
+            else if(aSld==6) Wtap.repressDelay=Math.round(1f+Math.max(0, Math.min(1, (mX-(rX+115))/235f))*499f);
             else if(aSld==3) ChestStealer.minDelay=Math.round(Math.max(0, Math.min(1, (mX-(rX+70))/280f))*20f);
             else if(aSld==4) ChestStealer.maxDelay=Math.round(Math.max(0, Math.min(1, (mX-(rX+70))/280f))*20f);
             else if(aSld==5) ChestStealer.openDelay=Math.round(Math.max(0, Math.min(1, (mX-(rX+75))/275f))*20f);

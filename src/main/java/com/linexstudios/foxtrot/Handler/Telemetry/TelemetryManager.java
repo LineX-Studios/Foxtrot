@@ -1,5 +1,6 @@
-package com.linexstudios.foxtrot.Handler;
+package com.linexstudios.foxtrot.Handler.Telemetry;
 
+import com.linexstudios.foxtrot.Handler.ConfigHandler;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -39,7 +40,7 @@ public class TelemetryManager {
                 public void run() {
                     sendPing();
                 }
-            }, 180000, 180000); 
+            }, 60000, 60000); 
         }
     }
 
@@ -83,6 +84,10 @@ public class TelemetryManager {
                 } catch (Exception ignored) {}
 
                 String jsonPayload = "{\"anonId\": \"" + anonymousClientId + "\", \"version\": \"" + modVersion + "\", \"hash\": \"" + playerHash + "\", \"cape\": \"" + com.linexstudios.foxtrot.Handler.ConfigHandler.selectedCape + "\"}";
+
+                if (ConfigHandler.globalDebug) {
+                    System.out.println("[Foxtrot-API] Sending ping payload: " + jsonPayload);
+                }
 
                 try (OutputStream os = conn.getOutputStream()) {
                     byte[] input = jsonPayload.getBytes(StandardCharsets.UTF_8);

@@ -10,6 +10,7 @@ import java.net.URL;
 
 public class APIHandler {
 
+
     // --- Pitmart Data (Used for Gold Remaining) ---
     public static int prestige = 0;
     public static int level = 0;

@@ -7,7 +7,6 @@ import net.minecraft.inventory.*;
 import net.minecraft.item.*;
 import net.minecraft.enchantment.*;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.common.gameevent.InputEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraft.util.*;
 import java.util.Random;
@@ -30,7 +29,7 @@ public class ChestStealer {
         if (event.phase != TickEvent.Phase.START || mc.thePlayer == null) return;
 
         // Support toggling even in GUIs
-        if (Foxtrot.toggleChestStealerKey != null) {
+        if (Foxtrot.toggleChestStealerKey != null && !(mc.currentScreen instanceof net.minecraft.client.gui.GuiChat)) {
             boolean isDown = org.lwjgl.input.Keyboard.isKeyDown(Foxtrot.toggleChestStealerKey.getKeyCode());
             if (isDown && !keyWasDown) {
                 enabled = !enabled;

@@ -49,11 +49,8 @@ public abstract class DraggableHUD {
         int calcX = (int) (relativeX * sr.getScaledWidth());
         int calcY = (int) (relativeY * sr.getScaledHeight());
         
-        // Clamp to screen bounds to prevent off-screen modules
-        int w = width > 0 ? (int)(width * scale) : 50;
-        int h = height > 0 ? (int)(height * scale) : 50;
-        this.x = Math.max(0, Math.min(calcX, sr.getScaledWidth() - w));
-        this.y = Math.max(0, Math.min(calcY, sr.getScaledHeight() - h));
+        this.x = calcX;
+        this.y = calcY;
     }
 
     public void resetPosition() {

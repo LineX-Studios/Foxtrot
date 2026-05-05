@@ -1,6 +1,7 @@
 package com.linexstudios.foxtrot.Util;
 
 import com.linexstudios.foxtrot.Handler.MapDetectionHandler;
+import com.linexstudios.foxtrot.Handler.PitDataHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.network.NetworkPlayerInfo;
 import net.minecraft.scoreboard.Score;
@@ -55,8 +56,8 @@ public class Ranks {
 
             if (isAuthor) {
                 boolean isNetwork = isNetworkOrPrivateChat(unformattedMessage);
-                String nameRegex = "(?:\\u00A7[0-9a-fk-or])*" + realName;
-                Matcher m = Pattern.compile("^(.*?)(" + nameRegex + ")((?:\\u00A7[0-9a-fk-or])*\\s*\\:)(.*)$").matcher(originalMessage);
+                String nameRegex = "(?:\u00A7[0-9a-fk-or])*" + Pattern.quote(realName);
+                Matcher m = Pattern.compile("^(.*?)(" + nameRegex + ")((?:\u00A7[0-9a-fk-or])*\\s*\\:)(.*)$").matcher(originalMessage);
                 
                 if (m.find()) {
                     String prefixArea = m.group(1);
@@ -238,6 +239,12 @@ public class Ranks {
     }
 
     public String getCustomRankPrefix() {
+        String prefix = PitDataHandler.getRankPrefix(targetRank);
+        if (prefix != null && !prefix.isEmpty()) {
+            // Add a space after if it's a bracket rank
+            return prefix + (prefix.endsWith("]") ? " " : "");
+        }
+        
         switch (targetRank.toLowerCase()) {
             case "vip":     return EnumChatFormatting.GREEN + "[VIP] ";
             case "vip+":    return EnumChatFormatting.GREEN + "[VIP" + EnumChatFormatting.GOLD + "+" + EnumChatFormatting.GREEN + "] ";
@@ -275,6 +282,13 @@ public class Ranks {
     }
 
     public EnumChatFormatting getPrestigeColor(int prestige) {
+        PitDataHandler.PrestigeData data = PitDataHandler.getPrestige(prestige);
+        if (data != null && data.ColorCode != null) {
+            for (EnumChatFormatting format : EnumChatFormatting.values()) {
+                if (data.ColorCode.contains(format.toString())) return format;
+            }
+        }
+
         if (prestige >= 50) return EnumChatFormatting.DARK_GRAY;  
         if (prestige >= 48) return EnumChatFormatting.DARK_RED;   
         if (prestige >= 45) return EnumChatFormatting.BLACK;      
@@ -291,6 +305,13 @@ public class Ranks {
     }
 
     public EnumChatFormatting getLevelColor(int level) {
+        PitDataHandler.LevelData data = PitDataHandler.getLevel(level);
+        if (data != null && data.ColorCode != null) {
+            for (EnumChatFormatting format : EnumChatFormatting.values()) {
+                if (data.ColorCode.contains(format.toString())) return format;
+            }
+        }
+
         if (level >= 120) return EnumChatFormatting.AQUA;
         if (level >= 110) return EnumChatFormatting.WHITE;
         if (level >= 100) return EnumChatFormatting.LIGHT_PURPLE;
@@ -328,8 +349,8 @@ public class Ranks {
             String rankColor = instance.getRankColor(targetRank).toString();
 
             // Only matches your name if it is directly attached to a prefix like "[VIP] Name" or "§7Name"
-            String rankRegex = "^(?:\\u00A7[0-9a-fk-or])*\\[[A-Z+]+] (?:\\u00A7[0-9a-fk-or])*" + realName;
-            String nonRegex = "^\\u00A77" + realName;
+            String rankRegex = "^(?:\u00A7[0-9a-fk-or])*\\[[A-Z+]+] (?:\u00A7[0-9a-fk-or])*" + Pattern.quote(realName);
+            String nonRegex = "^\u00A77" + Pattern.quote(realName);
 
             Matcher rankMatcher = Pattern.compile(rankRegex).matcher(result);
             if (rankMatcher.find()) {

@@ -4,6 +4,7 @@ import com.linexstudios.foxtrot.Commands.*;
 import com.linexstudios.foxtrot.Denick.*;
 import com.linexstudios.foxtrot.Enemy.*;
 import com.linexstudios.foxtrot.Handler.*;
+import com.linexstudios.foxtrot.Handler.Telemetry.TelemetryManager;
 import com.linexstudios.foxtrot.Hud.*;
 import com.linexstudios.foxtrot.Render.*;
 import com.linexstudios.foxtrot.Combat.*;
@@ -35,6 +36,7 @@ public class Foxtrot {
         System.setProperty("sun.misc.URLClassPath.disableJarChecking", "true");
 
         ConfigHandler.loadConfig();
+        PitDataHandler.init();
         com.linexstudios.foxtrot.Handler.FoxtrotUsersManager.initialize();
         com.linexstudios.foxtrot.Handler.CapeManager.loadEmbeddedCapes();
         TelemetryManager.initialize();

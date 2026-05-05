@@ -134,7 +134,7 @@ public class WhoGotBanned {
                 conn.setRequestMethod("POST");
                 conn.setRequestProperty("Content-Type", "application/json; utf-8");
                 conn.setRequestProperty("Accept", "application/json");
-                conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
+                conn.setRequestProperty("Content-Type", "application/json");
                 conn.setDoOutput(true);
 
                 String jsonInputString = "{\"username\": \"" + username + "\"}";

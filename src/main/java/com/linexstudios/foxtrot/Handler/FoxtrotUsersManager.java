@@ -21,13 +21,13 @@ public class FoxtrotUsersManager {
         // Initial fetch
         fetchUsers();
 
-        // Refresh every 5 minutes
+        // Refresh every 60 seconds so users see each other much faster!
         new Timer(true).scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
                 fetchUsers();
             }
-        }, 300000, 300000);
+        }, 60000, 60000);
     }
 
     private static void fetchUsers() {
