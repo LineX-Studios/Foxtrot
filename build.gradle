@@ -15,7 +15,7 @@ apply plugin: 'net.minecraftforge.gradle.forge'
 apply plugin: 'org.spongepowered.mixin'
 apply plugin: 'com.github.johnrengelman.shadow'
 
-version = "1.0.3.0.8-WORK"
+version = "1.0.3"
 group = "com.linexstudios.foxtrot"
 archivesBaseName = "Foxtrot"
 
