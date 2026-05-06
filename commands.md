@@ -1,55 +1,30 @@
-# Foxtrot Mod - Command Guide
+# ⌨️ Foxtrot Commands
 
-## Base Command
-- `/foxtrot` or `/fx`
+### 👥 Player Management
+*   **`/fx add [name]`**: Add a player to the enemy list (red highlight).
+*   **`/fx remove [name]`**: Remove a player from the enemy list.
+*   **`/fx friend add [name]`**: Add a player to the friend list (green highlight).
+*   **`/fx team add [name]`**: Add a player to the teammate list (cyan highlight).
+*   **`/fx list`**: View your current enemy list.
+*   **`/fx clear`**: Remove all players from the enemy list.
 
-## Player Management
+### 🎨 Visuals
+*   **`/fx hud`**: Open the visual editor to move and resize HUD modules.
+*   **`/fx esp`**: Toggle the master switch for glowing players through walls.
+*   **`/fx nonhighlighter`**: Toggle highlighting for players with no armor or ranks.
+*   **`/fx enchantnames`**: Toggle showing enchantment/item names above player heads.
+*   **`/fx toggle`**: Global toggle to hide or show all HUD elements.
 
-### ⚔️ Enemies
-- `/fx add [name]` - Add a player to the enemy list.
-- `/fx remove [name]` - Remove a player from the enemy list.
-- `/fx list` - View the current enemy list.
-- `/fx clear` - Clear all enemies.
+### 🔍 Denicking
+*   **`/fx denick [name]`**: Manually attempt to identify a nicked player.
+*   **`/fx autodenick`**: Toggle automatic name identification for all nicked players.
+*   **`/fx denickentry clear`**: Clear the local cache of identified players.
 
-### 🤝 Friends
-- `/fx friend add [name]` - Add a player to the friend list (UUID-based).
-- `/fx friend remove [name]` - Remove a player from the friend list.
-- `/fx friend list` - View the current friend list.
-
-### 🛡️ Teammates / Guild
-- `/fx team <add|remove|list> [name]` - Manage your teammates.
-- `/fx guild <add|remove|list> [name]` - Alias for teammate command.
-- `/fx t <add|remove|list> [name]` - Short alias.
-- `/fx g <add|remove|list> [name]` - Short alias.
-- *Note: Guild members are automatically synced once a day via PitPal API.*
-
-## Visuals & ESP
-- `/fx esp` - Master toggle for all ESP (Enemy, Friend, Teammate).
-- `/fx nonhighlighter` - Toggle Non-Highlighter ESP.
-- `/fx nickhud` - Toggle the Nicked HUD list.
-- `/fx enemyhud` - Toggle the Enemy HUD list.
-- `/fx hud` - Open the visual HUD editor.
-- `/fx alerts` - Toggle join notifications for enemies.
-- `/fx toggle` - Global toggle for all HUD elements.
-
-## Denicking
-- `/fx denick [name]` - Manually scrape and denick nicked players (Mystic items on hotbar/Armor Slot required).
-- `/fx denickentry clear [name]` - Clear cached nick info for a player.
-- `/fx denickentry clear` - clear ALL cached nick entries.
-- `/fx autodenick` - Toggle automatic denicking (Mystic-Only).
-
-## Utilities
-- `/fx focus <name|remove|clear>` - Hide all players except the target.
-- `/fx rank <prestige> <level> <rank>` - Set your spoofed rank visuals.
-- `/fx nickname <name|off>` - Spoof your in-game name.
-- `/fx ring` - Toggle the Ring Helper module.
-- `/fx deadlobby` - Toggle the Dead Lobby Finder.
-- `/fx venom` - Toggle the Venom Timer HUD.
-- `/fx enchantnames` - Toggle custom enchantment names on items on top of the player's nametag.
-
-## Debugging
-- `/fx debug` - Toggle global debug logging (For Developers only).
-
-## Stealth
-- `/fx modidhider` - Toggle spoofing the client brand to "vanilla" to avoid mod detection on Hypixel.
-- `/fx rpc` - Toggle the Discord Rich Presence (Alias for the setting button).
+### 🛠️ Tools
+*   **`/fx rank [prestige] [level] [rank]`**: Spoof your prestige, level, and rank prefix locally.
+*   **`/fx nickname [name]`**: Spoof your username in the chat locally.
+*   **`/fx deadlobby`**: Toggle the automatic search for low-player lobbies.
+*   **`/fx ring`**: Toggle the mid block-up guide visual.
+*   **`/fx focus [name]`**: Toggle focus mode on a specific player.
+*   **`/fx venom`**: Toggle the Venom Timer HUD.
+*   **`/fx modidhider`**: Toggle client brand spoofing (vanilla vs forge).
