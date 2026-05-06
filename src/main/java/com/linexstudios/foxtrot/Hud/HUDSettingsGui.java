@@ -18,12 +18,14 @@ import java.io.IOException;
 
 public class HUDSettingsGui extends GuiScreen {
     private final GuiScreen prev;
-    private String[] modules = {"Potion Status", "Armor Status", "Coordinates", "Enemy List", "Nicked List", "Friend List", "Session Stats", "Event Tracker", "Regularity List", "Darks List", "Toggle Sprint", "CPS", "FPS", "Boss Bar", "Telebow Timer", "Player Counter", "Venom Timer", "W-Tap", "Chest Stealer"};
+    private String[] modules = {"Potion Status", "Armor Status", "Coordinates", "Enemy List", "Nicked List", "Friend List", "Session Stats", "Event Tracker", "Regularity List", "Darks List", "Toggle Sprint", "CPS", "FPS", "Boss Bar", "Telebow Timer", "Player Counter", "Venom Timer", "W-Tap", "Chest Stealer", "Discord RPC"};
     private boolean inSettings = false, dragBox = false, dragHue = false;
-    private int sel = -1, maxScr = 0, colorTgt = -1, pX = 0, pY = 0, aSld = -1;
+    private int sel = -1, maxScr = 0, colorTgt = -1, pX = 0, pY = 0, aSld = -1, lastX = 0, lastY = 0, resizingCorner = 0;
     private float scrY = 0, tScrY = 0, cH = 0f, cS = 1f, cB = 1f;
+    private long lastClickTime = 0;
+    private DraggableHUD lastClickedHUD = null, resizingModule = null;
     private int[] pal = {0xFFFFFF, 0xAAAAAA, 0x555555, 0xFF5555, 0x55FF55, 0x5555FF, 0xFFFF55, 0x55FFFF, 0xFFAA00, 0xFF55FF, 0x000000};
-    private final int COLOR_ENABLED = 0xFF28A061, COLOR_DISABLED = 0xFFB82C35, COLOR_TEXT_SECONDARY = 0xFFAAAAAA, COLOR_SEPARATOR = 0x44FFFFFF, COLOR_CARD_BG = 0x44000000, COLOR_CARD_BG_HOVER = 0x66000000, COLOR_BTN_HOVER_OVERLAY = 0x22FFFFFF;
+    private final int COLOR_ENABLED = 0xFF28A061, COLOR_DISABLED = 0xFFB82C35, COLOR_TEXT_SECONDARY = 0xFFAAAAAA, COLOR_CARD_BG = 0x44000000, COLOR_CARD_BG_HOVER = 0x66000000, COLOR_BTN_HOVER_OVERLAY = 0x22FFFFFF;
 
     public HUDSettingsGui(GuiScreen p) { this.prev = p; }
     public HUDSettingsGui(GuiScreen p, int d) { this.prev = p; this.sel = d; this.inSettings = true; }
@@ -73,15 +75,18 @@ public class HUDSettingsGui extends GuiScreen {
                 case 11: RenderUtils.drawRoundedRect(rX,rY,360,70,4,0x33000000); drawTgl(rX+10, rY+8, 340, "Show Background", CPSModule.showBackground, mX, mY); RenderUtils.drawSolidRect(rX+10, rY+28, 340, 1, 0x11FFFFFF); fontRendererObj.drawStringWithShadow("Text Color", rX+10, rY+36, 0xDDDDDD); drawPal(rX+10, rY+49, CPSModule.textColor, mX, mY, 8); break;
                 case 12: RenderUtils.drawRoundedRect(rX,rY,360,70,4,0x33000000); drawTgl(rX+10, rY+8, 340, "Show Background", FPSModule.showBackground, mX, mY); RenderUtils.drawSolidRect(rX+10, rY+28, 340, 1, 0x11FFFFFF); fontRendererObj.drawStringWithShadow("Text Color", rX+10, rY+36, 0xDDDDDD); drawPal(rX+10, rY+49, FPSModule.textColor, mX, mY, 10); break;
                 case 15: RenderUtils.drawRoundedRect(rX,rY,360,85,4,0x33000000); fontRendererObj.drawStringWithShadow("Prefix Color", rX+10, rY+10, 0xDDDDDD); drawPal(rX+10, rY+23, PlayerCounterHUD.prefixColor, mX, mY, 11); fontRendererObj.drawStringWithShadow("Number Color", rX+10, rY+50, 0xDDDDDD); drawPal(rX+10, rY+63, PlayerCounterHUD.countColor, mX, mY, 12); break;
-                case 17: RenderUtils.drawRoundedRect(rX,rY,360,60,4,0x33000000); fontRendererObj.drawStringWithShadow("Delay (Ticks)", rX+10, rY+12, 0xDDDDDD); drawSld(rX+80, rY+10, Wtap.delay, 0, 10, 270); fontRendererObj.drawStringWithShadow("Duration (Ticks)", rX+10, rY+37, 0xDDDDDD); drawSld(rX+100, rY+35, Wtap.duration, 1, 5, 250); break;
+                case 17: RenderUtils.drawRoundedRect(rX,rY,360,105,4,0x33000000); fontRendererObj.drawStringWithShadow("Chance %", rX+10, rY+12, 0xDDDDDD); drawSld(rX+70, rY+10, Wtap.chance, 0, 100, 280); fontRendererObj.drawStringWithShadow("Release Delay (ms)", rX+10, rY+32, 0xDDDDDD); drawSld(rX+115, rY+30, Wtap.releaseDelay, 1, 500, 235); fontRendererObj.drawStringWithShadow("Repress Delay (ms)", rX+10, rY+52, 0xDDDDDD); drawSld(rX+115, rY+50, Wtap.repressDelay, 1, 500, 235); drawTgl(rX+10, rY+70, 340, "Select Hits (Combo Only)", Wtap.selectHits, mX, mY); break;
                 case 18: RenderUtils.drawRoundedRect(rX,rY,360,175,4,0x33000000); fontRendererObj.drawStringWithShadow("Min Delay", rX+10, rY+12, 0xDDDDDD); drawSld(rX+70, rY+10, ChestStealer.minDelay, 0, 20, 280); fontRendererObj.drawStringWithShadow("Max Delay", rX+10, rY+32, 0xDDDDDD); drawSld(rX+70, rY+30, ChestStealer.maxDelay, 0, 20, 280); fontRendererObj.drawStringWithShadow("Open Delay", rX+10, rY+52, 0xDDDDDD); drawSld(rX+75, rY+50, ChestStealer.openDelay, 0, 20, 275); drawTgl(rX+10, rY+70, 340, "Auto Close", ChestStealer.autoClose, mX, mY); drawTgl(rX+10, rY+90, 340, "Name Check", ChestStealer.nameCheck, mX, mY); drawTgl(rX+10, rY+110, 340, "Skip Trash", ChestStealer.skipTrash, mX, mY); drawTgl(rX+10, rY+130, 340, "More Armor", ChestStealer.moreArmor, mX, mY); drawTgl(rX+10, rY+150, 340, "More Sword", ChestStealer.moreSword, mX, mY); break;
             }
             if (colorTgt != -1) drawClr(pX, pY, mX, mY);
-        } super.drawScreen(mX, mY, pT);
+        } 
+        GlStateManager.color(1, 1, 1, 1);
+        GlStateManager.enableTexture2D();
+        super.drawScreen(mX, mY, pT);
     }
 
-    private boolean isE(int i) { boolean[] st={PotionHUD.enabled, ArmorHUD.enabled, CoordsHUD.enabled, EnemyHUD.enabled, NickedHUD.enabled, FriendsHUD.enabled, SessionStatsHUD.enabled, EventHUD.enabled, RegHUD.enabled, DarksHUD.enabled, ToggleSprintModule.instance.enabled, CPSModule.enabled, FPSModule.enabled, BossBarModule.enabled, TelebowHUD.enabled, PlayerCounterHUD.enabled, VenomTimer.enabled, Wtap.enabled, ChestStealer.enabled}; return i>=0&&i<st.length?st[i]:false; }
-    private void tgl(int i) { if(i==0)PotionHUD.enabled=!PotionHUD.enabled; else if(i==1)ArmorHUD.enabled=!ArmorHUD.enabled; else if(i==2)CoordsHUD.enabled=!CoordsHUD.enabled; else if(i==3)EnemyHUD.enabled=!EnemyHUD.enabled; else if(i==4)NickedHUD.enabled=!NickedHUD.enabled; else if(i==5)FriendsHUD.enabled=!FriendsHUD.enabled; else if(i==6)SessionStatsHUD.enabled=!SessionStatsHUD.enabled; else if(i==7)EventHUD.enabled=!EventHUD.enabled; else if(i==8)RegHUD.enabled=!RegHUD.enabled; else if(i==9)DarksHUD.enabled=!DarksHUD.enabled; else if(i==10)ToggleSprintModule.instance.enabled=!ToggleSprintModule.instance.enabled; else if(i==11)CPSModule.enabled=!CPSModule.enabled; else if(i==12)FPSModule.enabled=!FPSModule.enabled; else if(i==13)BossBarModule.enabled=!BossBarModule.enabled; else if(i==14)TelebowHUD.enabled=!TelebowHUD.enabled; else if(i==15)PlayerCounterHUD.enabled=!PlayerCounterHUD.enabled; else if(i==16)VenomTimer.enabled=!VenomTimer.enabled; else if(i==17)Wtap.enabled=!Wtap.enabled; else if(i==18)ChestStealer.enabled=!ChestStealer.enabled; }
+    private boolean isE(int i) { boolean[] st={PotionHUD.enabled, ArmorHUD.enabled, CoordsHUD.enabled, EnemyHUD.enabled, NickedHUD.enabled, FriendsHUD.enabled, SessionStatsHUD.enabled, EventHUD.enabled, RegHUD.enabled, DarksHUD.enabled, ToggleSprintModule.instance.enabled, CPSModule.enabled, FPSModule.enabled, BossBarModule.enabled, TelebowHUD.enabled, PlayerCounterHUD.enabled, VenomTimer.enabled, Wtap.enabled, ChestStealer.enabled, ConfigHandler.discordRpcEnabled}; return i>=0&&i<st.length?st[i]:false; }
+    private void tgl(int i) { if(i==0)PotionHUD.enabled=!PotionHUD.enabled; else if(i==1)ArmorHUD.enabled=!ArmorHUD.enabled; else if(i==2)CoordsHUD.enabled=!CoordsHUD.enabled; else if(i==3)EnemyHUD.enabled=!EnemyHUD.enabled; else if(i==4)NickedHUD.enabled=!NickedHUD.enabled; else if(i==5)FriendsHUD.enabled=!FriendsHUD.enabled; else if(i==6)SessionStatsHUD.enabled=!SessionStatsHUD.enabled; else if(i==7)EventHUD.enabled=!EventHUD.enabled; else if(i==8)RegHUD.enabled=!RegHUD.enabled; else if(i==9)DarksHUD.enabled=!DarksHUD.enabled; else if(i==10)ToggleSprintModule.instance.enabled=!ToggleSprintModule.instance.enabled; else if(i==11)CPSModule.enabled=!CPSModule.enabled; else if(i==12)FPSModule.enabled=!FPSModule.enabled; else if(i==13)BossBarModule.enabled=!BossBarModule.enabled; else if(i==14)TelebowHUD.enabled=!TelebowHUD.enabled; else if(i==15)PlayerCounterHUD.enabled=!PlayerCounterHUD.enabled; else if(i==16)VenomTimer.enabled=!VenomTimer.enabled; else if(i==17)Wtap.enabled=!Wtap.enabled; else if(i==18)ChestStealer.enabled=!ChestStealer.enabled; else if(i==19){ConfigHandler.discordRpcEnabled=!ConfigHandler.discordRpcEnabled; if(ConfigHandler.discordRpcEnabled) com.linexstudios.foxtrot.Util.DiscordRPCManager.start(); else com.linexstudios.foxtrot.Util.DiscordRPCManager.stop();} }
 
     @Override protected void mouseClicked(int mX, int mY, int b) throws IOException {
         if(b!=0) return; int pW=400, pH=300, x=(this.width-pW)/2, y=(this.height-pH)/2;
@@ -107,8 +112,33 @@ public class HUDSettingsGui extends GuiScreen {
                 case 11: if(in(mX,mY,rX+10,rY+8,340,14)) CPSModule.showBackground=!CPSModule.showBackground; for(int i=0;i<11;i++) if(in(mX,mY,rX+10+(i*22),rY+49,12,12)){if(i==10)oPal(8,rX+10+(i*22),rY+49,CPSModule.textColor);else CPSModule.textColor=pal[i];return;} break;
                 case 12: if(in(mX,mY,rX+10,rY+8,340,14)) FPSModule.showBackground=!FPSModule.showBackground; for(int i=0;i<11;i++) if(in(mX,mY,rX+10+(i*22),rY+49,12,12)){if(i==10)oPal(10,rX+10+(i*22),rY+49,FPSModule.textColor);else FPSModule.textColor=pal[i];return;} break;
                 case 15: for(int i=0;i<11;i++){ if(in(mX,mY,rX+10+(i*22),rY+23,12,12)){if(i==10)oPal(11,rX+10+(i*22),rY+23,PlayerCounterHUD.prefixColor);else PlayerCounterHUD.prefixColor=pal[i];return;} if(in(mX,mY,rX+10+(i*22),rY+63,12,12)){if(i==10)oPal(12,rX+10+(i*22),rY+63,PlayerCounterHUD.countColor);else PlayerCounterHUD.countColor=pal[i];return;} } break;
-                case 17: if(in(mX,mY,rX+80,rY+14,270,15)) { aSld=1; return; } if(in(mX,mY,rX+100,rY+39,250,15)) { aSld=2; return; } break;
+                case 17: if(in(mX,mY,rX+70,rY+14,280,15)) { aSld=1; return; } if(in(mX,mY,rX+115,rY+34,235,15)) { aSld=2; return; } if(in(mX,mY,rX+115,rY+54,235,15)) { aSld=6; return; } if(in(mX,mY,rX+10,rY+70,340,14)) Wtap.selectHits=!Wtap.selectHits; break;
                 case 18: if(in(mX,mY,rX+70,rY+14,280,15)) { aSld=3; return; } if(in(mX,mY,rX+70,rY+34,280,15)) { aSld=4; return; } if(in(mX,mY,rX+75,rY+54,275,15)) { aSld=5; return; } if(in(mX,mY,rX+10,rY+70,340,14)) ChestStealer.autoClose=!ChestStealer.autoClose; if(in(mX,mY,rX+10,rY+90,340,14)) ChestStealer.nameCheck=!ChestStealer.nameCheck; if(in(mX,mY,rX+10,rY+110,340,14)) ChestStealer.skipTrash=!ChestStealer.skipTrash; if(in(mX,mY,rX+10,rY+130,340,14)) ChestStealer.moreArmor=!ChestStealer.moreArmor; if(in(mX,mY,rX+10,rY+150,340,14)) ChestStealer.moreSword=!ChestStealer.moreSword; break;
+            }
+        }
+        
+        // SUPPORT DOUBLE-CLICK AND RESIZING EVEN IN SETTINGS
+        if (in(mX, mY, x, y, pW, pH)) return;
+        DraggableHUD[] hRegistry = {PotionHUD.instance, ArmorHUD.instance, CoordsHUD.instance, EnemyHUD.instance, NickedHUD.instance, FriendsHUD.instance, SessionStatsHUD.instance, EventHUD.instance, RegHUD.instance, DarksHUD.instance, ToggleSprintModule.instance, CPSModule.instance, FPSModule.instance, BossBarModule.instance, TelebowHUD.instance, PlayerCounterHUD.instance, VenomTimer.instance};
+        for(DraggableHUD h : hRegistry) {
+            if(!h.isEnabled()) continue;
+            if(in(mX, mY, h.x, h.y, h.width * h.scale, h.height * h.scale)) {
+                long now = System.currentTimeMillis();
+                int cr = h.getHoveredCorner(mX, mY);
+                if(cr != 0) {
+                    resizingModule = h;
+                    resizingCorner = cr;
+                    lastX = mX; lastY = mY;
+                    return;
+                }
+                if(h == lastClickedHUD && (now - lastClickTime < 300)) {
+                    sel = getIdx(h.name);
+                    inSettings = true;
+                    mc.getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1F));
+                    return;
+                }
+                lastClickTime = now;
+                lastClickedHUD = h;
             }
         }
     }
@@ -120,14 +150,19 @@ public class HUDSettingsGui extends GuiScreen {
         else if(aSld != -1) {
             if(aSld==0) { DraggableHUD[] h={PotionHUD.instance, ArmorHUD.instance, CoordsHUD.instance, EnemyHUD.instance, NickedHUD.instance, FriendsHUD.instance, SessionStatsHUD.instance, EventHUD.instance, RegHUD.instance, DarksHUD.instance, ToggleSprintModule.instance, CPSModule.instance, FPSModule.instance, BossBarModule.instance, TelebowHUD.instance, PlayerCounterHUD.instance, VenomTimer.instance}; if(sel<h.length) h[sel].scale=0.5f+(Math.max(0, Math.min(1, (mX-(rX+80))/210f))); }
             else if(aSld==7) ToggleSprintModule.instance.flyBoostAmount=1f+(9f*Math.max(0, Math.min(1, (mX-(rX+80))/250f)));
-            else if(aSld==1) Wtap.delay=Math.round(Math.max(0, Math.min(1, (mX-(rX+80))/270f))*10f);
-            else if(aSld==2) Wtap.duration=Math.round(1f+Math.max(0, Math.min(1, (mX-(rX+100))/250f))*4f);
+            else if(aSld==1) Wtap.chance=Math.round(Math.max(0, Math.min(1, (mX-(rX+70))/280f))*100f);
+            else if(aSld==2) Wtap.releaseDelay=Math.round(1f+Math.max(0, Math.min(1, (mX-(rX+115))/235f))*499f);
+            else if(aSld==6) Wtap.repressDelay=Math.round(1f+Math.max(0, Math.min(1, (mX-(rX+115))/235f))*499f);
             else if(aSld==3) ChestStealer.minDelay=Math.round(Math.max(0, Math.min(1, (mX-(rX+70))/280f))*20f);
             else if(aSld==4) ChestStealer.maxDelay=Math.round(Math.max(0, Math.min(1, (mX-(rX+70))/280f))*20f);
             else if(aSld==5) ChestStealer.openDelay=Math.round(Math.max(0, Math.min(1, (mX-(rX+75))/275f))*20f);
-        } 
+        } else if(resizingModule != null) {
+            int dX = mX - lastX, dY = mY - lastY;
+            resizingModule.handleResize(dX, dY, resizingCorner);
+            lastX = mX; lastY = mY;
+        }
     }
-    @Override protected void mouseReleased(int mX, int mY, int s) { aSld=-1; dragBox=false; dragHue=false; ConfigHandler.saveConfig(); }
+    @Override protected void mouseReleased(int mX, int mY, int s) { aSld=-1; dragBox=false; dragHue=false; resizingModule=null; resizingCorner=0; ConfigHandler.saveConfig(); }
 
     private void drawClr(int x, int y, int mX, int mY) { RenderUtils.drawRoundedRect(x-5, y-5, 135, 110, 4, 0xFA1E1E1E); RenderUtils.setupSmoothRender(true); GL11.glBegin(GL11.GL_QUADS); RenderUtils.setColor(0xFFFFFFFF); GL11.glVertex2f(x, y); RenderUtils.setColor(0xFF000000); GL11.glVertex2f(x, y+100); RenderUtils.setColor(0xFF000000); GL11.glVertex2f(x+100, y+100); RenderUtils.setColor(Color.HSBtoRGB(cH, 1f, 1f)|0xFF000000); GL11.glVertex2f(x+100, y); GL11.glEnd(); RenderUtils.endSmoothRender(); float dX=x+(cS*100), dY=y+((1f-cB)*100); RenderUtils.drawCircle(dX, dY, 4f, 0xFF000000); RenderUtils.drawCircle(dX, dY, 3f, 0xFFFFFFFF); RenderUtils.setupSmoothRender(true); GL11.glBegin(GL11.GL_QUAD_STRIP); for(int i=0;i<=20;i++){float hS=i/20f;RenderUtils.setColor(Color.HSBtoRGB(hS, 1f, 1f)|0xFF000000);GL11.glVertex2f(x+110, y+(hS*100));GL11.glVertex2f(x+120, y+(hS*100));} GL11.glEnd(); RenderUtils.endSmoothRender(); float hY=y+(cH*100); RenderUtils.drawSolidRect(x+108, hY-1, 14, 3, 0xFFFFFFFF); RenderUtils.drawSolidRect(x+109, hY, 12, 1, 0xFF000000); }
     private void oPal(int i, int x, int y, int c) { colorTgt=i; pX=x+15; pY=y-45; float[] h=Color.RGBtoHSB((c>>16)&0xFF, (c>>8)&0xFF, c&0xFF, null); cH=h[0]; cS=h[1]; cB=h[2]; }
@@ -139,6 +174,7 @@ public class HUDSettingsGui extends GuiScreen {
     private void drawSld(float x, float y, float v, float mn, float mx, float tW) { String vT=String.format("%.1f", v); fontRendererObj.drawStringWithShadow(vT, x+tW-fontRendererObj.getStringWidth(vT), y-6, 0xAAAAAA); RenderUtils.drawRoundedRect(x, y+4, tW, 4, 2, 0xFF333333); float fW=((v-mn)/(mx-mn))*tW; if(fW>4) RenderUtils.drawRoundedRect(x, y+4, fW, 4, 2, COLOR_DISABLED); RenderUtils.drawCircleOutline(x+fW, y+6, 5, 1, 0x88000000); RenderUtils.drawCircle(x+fW, y+6, 4, 0xFFFFFFFF); }
     private void drawPal(float x, float y, int cr, int mX, int mY, int tI) { for(int i=0;i<pal.length;i++){ float cX=x+(i*22)+6, cY=y+6; boolean hv=in(mX,mY,x+(i*22),y,12,12); if(i==10){ if(colorTgt==tI) RenderUtils.drawCircle(cX, cY, 7.5f, COLOR_DISABLED); else if(hv) RenderUtils.drawCircle(cX, cY, 7.5f, 0x55FFFFFF); RenderUtils.drawCircle(cX, cY, 6.5f, 0xFF222222); RenderUtils.drawCircle(cX, cY, 5.5f, 0xFF111111); fontRendererObj.drawStringWithShadow("+", cX-2.5f, cY-3.5f, 0xAAAAAA); } else { if(hv && pal[i]!=cr) RenderUtils.drawCircle(cX, cY, 7.5f, 0x55FFFFFF); if((pal[i]&0xFFFFFF)==(cr&0xFFFFFF)) RenderUtils.drawCircle(cX, cY, 7.5f, 0xFFFFFFFF); RenderUtils.drawCircle(cX, cY, 5.5f, pal[i]|0xFF000000); } } }
     private boolean in(float mX, float mY, float x, float y, float w, float h) { return mX>=x && mX<=x+w && mY>=y && mY<=y+h; }
+    private int getIdx(String n) { if(n==null)return 0; String l = n.toLowerCase(); return l.contains("potion")?0 : l.contains("armor")?1 : l.contains("coord")?2 : l.contains("enemy")?3 : l.contains("nick")?4 : l.contains("friend")?5 : l.contains("session")?6 : l.contains("event")?7 : l.contains("reg")?8 : l.contains("dark")?9 : l.contains("sprint")?10 : l.contains("cps")?11 : l.contains("fps")?12 : l.contains("boss")?13 : l.contains("telebow")?14 : l.contains("counter")?15 : l.contains("venom")?16 : 0; }
     @Override public void onGuiClosed() { Keyboard.enableRepeatEvents(false); ConfigHandler.saveConfig(); }
     @Override public boolean doesGuiPauseGame() { return false; }
 }

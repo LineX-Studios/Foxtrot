@@ -33,20 +33,15 @@ public class NickScanner {
 
             UUID playerUUID = info.getGameProfile().getId();
 
-            // Version 1 indicates an offline UUID / Hypixel Nick
             if (playerUUID.version() == 1) {
                 String nickName = info.getGameProfile().getName();
 
-                // Instantly detect them and push to your HUD/Manager before they render
+                // Instantly detect them and push to your HUD/Manager before we even have their nonce
                 if (!detectedNicks.contains(nickName)) {
                     detectedNicks.add(nickName);
                     
-                    if (!CacheManager.nickInCache(nickName) && !NickedManager.isResolved(nickName)) {
-                        // Push to HUD instantly so you know they are in the lobby.
-                        // AutoDenick.java will detect this "Scraping" status and run the 
-                        // full NBT + PitPal + Pitpanda sequence the second their armor renders!
-                        NickedManager.addNicked(nickName, "Scraping");
-                    }
+                    // Assuming you are still using your custom NickedManager for the HUD rendering:
+                    NickedManager.addNicked(nickName, "\u00a77Scraping");
                 }
             }
         }

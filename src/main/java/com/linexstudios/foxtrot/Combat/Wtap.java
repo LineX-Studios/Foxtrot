@@ -2,6 +2,8 @@ package com.linexstudios.foxtrot.Combat;
 
 import com.linexstudios.foxtrot.Foxtrot;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.settings.KeyBinding;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.potion.Potion;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.EnumChatFormatting;
@@ -10,19 +12,23 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.InputEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 
+import java.util.Random;
+
 public class Wtap {
     public static final Wtap instance = new Wtap();
     private static final Minecraft mc = Minecraft.getMinecraft();
+    private final Random rand = new Random();
     
     public static boolean enabled = false;
-    public static float delay = 5.5F;
-    public static float duration = 1.5F;
+    public static float chance = 100.0F; 
+    public static float releaseDelay = 20.0F; 
+    public static float repressDelay = 20.0F; 
+    public static boolean selectHits = false;
 
     private boolean active = false;
-    private boolean stopForward = false;
-    private long delayTicks = 0L;
-    private long durationTicks = 0L;
-    private long lastTime = 0L;
+    private boolean releasing = false;
+    private long hitTime = 0L;
+    private long releaseTime = 0L;
 
     private boolean canTrigger() {
         return !(mc.thePlayer.movementInput.moveForward < 0.8F)
@@ -44,25 +50,29 @@ public class Wtap {
     @SubscribeEvent
     public void onTick(TickEvent.ClientTickEvent event) {
         if (enabled && event.phase == TickEvent.Phase.END && mc.thePlayer != null) {
-            if (this.active) {
-                if (!this.stopForward && !this.canTrigger()) {
-                    this.active = false;
-                    while (this.delayTicks > 0L) {
-                        this.delayTicks -= 50L;
+            if (active) {
+                long now = System.currentTimeMillis();
+                if (!canTrigger()) {
+                    active = false;
+                    releasing = false;
+                    KeyBinding.setKeyBindState(mc.gameSettings.keyBindForward.getKeyCode(), org.lwjgl.input.Keyboard.isKeyDown(mc.gameSettings.keyBindForward.getKeyCode()));
+                    return;
+                }
+                
+                if (!releasing) {
+                    if (now - hitTime >= (long)releaseDelay) {
+                        releasing = true;
+                        releaseTime = now;
                     }
-                    while (this.durationTicks > 0L) {
-                        this.durationTicks -= 50L;
-                    }
-                } else if (this.delayTicks > 0L) {
-                    this.delayTicks -= 50L;
                 } else {
-                    if (this.durationTicks > 0L) {
-                        this.durationTicks -= 50L;
-                        this.stopForward = true;
+                    if (now - releaseTime >= (long)repressDelay) {
+                        active = false;
+                        releasing = false;
+                        KeyBinding.setKeyBindState(mc.gameSettings.keyBindForward.getKeyCode(), org.lwjgl.input.Keyboard.isKeyDown(mc.gameSettings.keyBindForward.getKeyCode()));
+                    } else {
                         mc.thePlayer.movementInput.moveForward = 0.0F;
-                    }
-                    if (this.durationTicks <= 0L) {
-                        this.active = false;
+                        mc.thePlayer.setSprinting(false);
+                        KeyBinding.setKeyBindState(mc.gameSettings.keyBindForward.getKeyCode(), false); 
                     }
                 }
             }
@@ -72,12 +82,21 @@ public class Wtap {
     @SubscribeEvent
     public void onAttack(AttackEntityEvent event) {
         if (enabled && !event.isCanceled() && event.entityPlayer == mc.thePlayer) {
-            if (!this.active && (System.currentTimeMillis() - this.lastTime >= 500L) && mc.thePlayer.isSprinting()) {
-                this.lastTime = System.currentTimeMillis();
-                this.active = true;
-                this.stopForward = false;
-                this.delayTicks = this.delayTicks + (long) (50.0F * delay);
-                this.durationTicks = this.durationTicks + (long) (50.0F * duration);
+            if (active) return; 
+
+            if (selectHits && event.target instanceof EntityLivingBase) {
+                EntityLivingBase target = (EntityLivingBase) event.target;
+                if (target.hurtResistantTime > 10) {
+                    return; 
+                }
+            }
+            
+            if (rand.nextFloat() * 100.0F <= chance) {
+                if (mc.thePlayer.isSprinting() || mc.gameSettings.keyBindForward.isKeyDown()) {
+                    hitTime = System.currentTimeMillis();
+                    active = true;
+                    releasing = false;
+                }
             }
         }
     }

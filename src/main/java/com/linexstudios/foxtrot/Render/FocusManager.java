@@ -30,7 +30,7 @@ public class FocusManager {
         if (player == mc.thePlayer) return;
 
         // Foxtrot Exclusive: Never hide people on your friends list!
-        if (com.linexstudios.foxtrot.Hud.FriendsHUD.isFriend(player.getName())) return;
+        if (com.linexstudios.foxtrot.Hud.FriendsHUD.isFriend(player.getUniqueID().toString(), player.getName())) return;
 
         // Check if the rendered player is in the focus list
         boolean isFocused = false;

@@ -1,5 +1,7 @@
 package com.linexstudios.foxtrot.Render;
 
+import com.linexstudios.foxtrot.Handler.MapDetectionHandler;
+import com.linexstudios.foxtrot.Hud.EventHUD;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.renderer.GlStateManager;
@@ -11,6 +13,8 @@ import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemNameTag;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.network.play.server.S22PacketMultiBlockChange;
+import net.minecraft.network.play.server.S23PacketBlockChange;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityChest;
 import net.minecraft.util.AxisAlignedBB;
@@ -21,42 +25,95 @@ import net.minecraftforge.fml.common.gameevent.TickEvent;
 import org.lwjgl.opengl.GL11;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class PitESP {
     public static final PitESP instance = new PitESP();
     private final Minecraft mc = Minecraft.getMinecraft();
 
     public static boolean espChests = true, espDragonEggs = true, espRaffleTickets = true, espMystics = true;
-    private final List<BlockPos> dragonEggs = new ArrayList<>();
+    private final Set<BlockPos> dragonEggs = ConcurrentHashMap.newKeySet();
     private int scanTimer = 0;
+
+    // --- INSTANT PACKET DETECTION ---
+    // This is 100% efficient. We only react when the server tells us a block changed.
+    public void onBlockChange(S23PacketBlockChange packet) {
+        if (!espDragonEggs) return;
+        BlockPos pos = packet.getBlockPosition();
+        if (packet.getBlockState().getBlock() == Blocks.dragon_egg) {
+            dragonEggs.add(pos);
+        } else {
+            dragonEggs.remove(pos);
+        }
+    }
+
+    public void onMultiBlockChange(S22PacketMultiBlockChange packet) {
+        if (!espDragonEggs) return;
+        for (S22PacketMultiBlockChange.BlockUpdateData data : packet.getChangedBlocks()) {
+            BlockPos pos = data.getPos();
+            if (data.getBlockState().getBlock() == Blocks.dragon_egg) {
+                dragonEggs.add(pos);
+            } else {
+                dragonEggs.remove(pos);
+            }
+        }
+    }
 
     @SubscribeEvent
     public void onTick(TickEvent.ClientTickEvent event) {
-        if (event.phase != TickEvent.Phase.END || mc.theWorld == null || mc.thePlayer == null) return;
-        if (espDragonEggs && ++scanTimer >= 2) {
-            scanTimer = 0; dragonEggs.clear();
-            BlockPos p = mc.thePlayer.getPosition();
-            for (int x = -70; x <= 70; x++)
-                for (int y = -10; y <= 10; y++)
-                    for (int z = -70; z <= 70; z++) {
-                        BlockPos pos = p.add(x, y, z);
-                        if (mc.theWorld.getBlockState(pos).getBlock() == Blocks.dragon_egg) dragonEggs.add(pos);
+        if (event.phase != TickEvent.Phase.END || mc.theWorld == null || mc.thePlayer == null || !espDragonEggs) return;
+        
+        if (!MapDetectionHandler.isInPit()) {
+            dragonEggs.clear();
+            return;
+        }
+
+        // --- SMART ADAPTIVE SCANNING ---
+        // If we ALREADY have a dragon egg tracked via packets, we do ZERO scanning.
+        if (!dragonEggs.isEmpty()) {
+            // Just verify the tracked egg still exists (prevents ghost boxes)
+            dragonEggs.removeIf(pos -> mc.theWorld.getBlockState(pos).getBlock() != Blocks.dragon_egg);
+            if (!dragonEggs.isEmpty()) return; 
+        }
+
+        // If no egg found, only scan if the event is active or starting in < 5 mins
+        if (EventHUD.instance.isDragonEggClose()) {
+            if (++scanTimer >= 20) { // Scan once per second only when searching
+                scanTimer = 0;
+                BlockPos p = mc.thePlayer.getPosition();
+                // Tighter search radius (25 blocks) to keep it light
+                for (int x = -25; x <= 25; x++) {
+                    for (int y = -10; y <= 10; y++) {
+                        for (int z = -25; z <= 25; z++) {
+                            BlockPos pos = p.add(x, y, z);
+                            if (mc.theWorld.getBlockState(pos).getBlock() == Blocks.dragon_egg) {
+                                dragonEggs.add(pos);
+                                return; // Found it! Stop scanning.
+                            }
+                        }
                     }
-        } else if (!espDragonEggs) dragonEggs.clear();
+                }
+            }
+        }
     }
 
     @SubscribeEvent
     public void onRenderWorld(RenderWorldLastEvent event) {
-        if (mc.theWorld == null || mc.thePlayer == null) return;
+        if (mc.theWorld == null || mc.thePlayer == null || !MapDetectionHandler.isInPit()) return;
+        
         double vX = mc.getRenderManager().viewerPosX, vY = mc.getRenderManager().viewerPosY, vZ = mc.getRenderManager().viewerPosZ;
         ICamera cam = new Frustum(); cam.setPosition(vX, vY, vZ);
 
         if (espChests) {
             for (TileEntity tile : mc.theWorld.loadedTileEntityList) {
                 if (tile instanceof TileEntityChest) {
-                    BlockPos p = tile.getPos(); int cx = p.getX(), cy = p.getY(), cz = p.getZ();
-                    if (cx >= 0 && cx <= 117 && cy >= 47 && cy <= 63 && cz >= -23 && cz <= 95) {
+                    BlockPos p = tile.getPos();
+                    int cx = p.getX(), cy = p.getY(), cz = p.getZ();
+                    if (cx >= -30 && cx <= 117 && cy >= 47 && cy <= 63 && cz >= -30 && cz <= 95) {
                         AxisAlignedBB bb = new AxisAlignedBB(cx - vX + 0.0625, cy - vY, cz - vZ + 0.0625, cx + 0.9375 - vX, cy + 0.875 - vY, cz + 0.9375 - vZ);
                         if (cam.isBoundingBoxInFrustum(bb.offset(vX, vY, vZ))) {
                             RenderUtils.setup3D();
@@ -88,7 +145,7 @@ public class PitESP {
                 AxisAlignedBB bb = new AxisAlignedBB(p.getX() - vX + 0.0625, p.getY() - vY, p.getZ() - vZ + 0.0625, p.getX() + 0.9375 - vX, p.getY() + 1 - vY, p.getZ() + 0.9375 - vZ);
                 if (cam.isBoundingBoxInFrustum(bb.offset(vX, vY, vZ))) {
                     RenderUtils.setup3D();
-                    RenderUtils.drawFilledBox(bb, 0.66f, 0.0f, 1.0f, 0.24f); // 0.66 Red + 1.0 Blue = Purple
+                    RenderUtils.drawFilledBox(bb, 0.66f, 0.0f, 1.0f, 0.24f);
                     RenderUtils.drawOutlinedBox(bb, 0.66f, 0.0f, 1.0f, 1.0f, 2.5f);
                     RenderUtils.end3D();
                 }
@@ -114,6 +171,6 @@ public class PitESP {
         GlStateManager.scale(-s, -s, s); GlStateManager.disableLighting(); GlStateManager.depthMask(false); GlStateManager.disableDepth();
         GlStateManager.enableBlend(); GlStateManager.tryBlendFuncSeparate(770, 771, 1, 0);
         fr.drawStringWithShadow(t, -fr.getStringWidth(t) / 2, 0, c);
-        GlStateManager.enableDepth(); GlStateManager.depthMask(true); GlStateManager.enableLighting(); GlStateManager.disableBlend(); GlStateManager.popMatrix();
+        GlStateManager.enableDepth(); GlStateManager.depthMask(true); GlStateManager.disableBlend(); GlStateManager.popMatrix();
     }
 }

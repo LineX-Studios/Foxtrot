@@ -45,17 +45,22 @@ public class NameTags {
         float scale = Math.max((distance / 4.0F) * 0.010F, 0.015F);
 
         GlStateManager.pushMatrix();
+
+        // 1. OPENMYAU ANTI-DESYNC FIX: Force GL11 and GlStateManager to sync.
+        GL11.glEnable(GL11.GL_BLEND);
+        GlStateManager.enableBlend();
+        GL11.glDisable(GL11.GL_LIGHTING);
+        GlStateManager.disableLighting();
+        GL11.glDisable(GL11.GL_DEPTH_TEST);
+        GlStateManager.disableDepth();
+        GlStateManager.depthMask(false);
+        GlStateManager.tryBlendFuncSeparate(770, 771, 1, 0);
+
         GlStateManager.translate((float)x, (float)y + player.height + 0.6F, (float)z);
         GL11.glNormal3f(0.0F, 1.0F, 0.0F);
         GlStateManager.rotate(-mc.getRenderManager().playerViewY, 0.0F, 1.0F, 0.0F);
         GlStateManager.rotate(mc.getRenderManager().playerViewX, 1.0F, 0.0F, 0.0F);
         GlStateManager.scale(-scale, -scale, scale);
-
-        GlStateManager.disableLighting();
-        GlStateManager.disableDepth(); 
-        GlStateManager.depthMask(false);
-        GlStateManager.enableBlend();
-        GlStateManager.tryBlendFuncSeparate(770, 771, 1, 0);
 
         String name = player.getDisplayName().getFormattedText();
         if (showHealth) {
@@ -65,11 +70,14 @@ public class NameTags {
             name = name + " " + colorCode + String.format("%.1f", health);
         }
 
-        int width = mc.fontRendererObj.getStringWidth(name) / 2;
+        boolean isFoxtrot = com.linexstudios.foxtrot.Handler.FoxtrotUsersManager.isFoxtrotUser(player.getUniqueID());
+        int logoSpace = isFoxtrot ? 11 : 0;
+        int stringWidth = mc.fontRendererObj.getStringWidth(name);
+        int totalWidth = stringWidth + logoSpace;
+        int halfWidth = totalWidth / 2;
 
-        // FETCH mystic enchants
         String swordEnchants = EnchantNames.getEnchantsString(player.getHeldItem());
-        String pantsEnchants = EnchantNames.getEnchantsString(player.getCurrentArmor(1)); // Slot 1 is Leggings
+        String pantsEnchants = EnchantNames.getEnchantsString(player.getCurrentArmor(1)); 
         
         boolean hasSword = swordEnchants != null && !swordEnchants.isEmpty();
         boolean hasPants = pantsEnchants != null && !pantsEnchants.isEmpty();
@@ -77,17 +85,15 @@ public class NameTags {
         int swordWidth = hasSword ? mc.fontRendererObj.getStringWidth(swordEnchants) / 2 : 0;
         int pantsWidth = hasPants ? mc.fontRendererObj.getStringWidth(pantsEnchants) / 2 : 0;
 
+        GL11.glDisable(GL11.GL_TEXTURE_2D);
         GlStateManager.disableTexture2D();
         
-        // optimizing the shit out of this
         Tessellator tessellator = Tessellator.getInstance();
         WorldRenderer worldrenderer = tessellator.getWorldRenderer();
         worldrenderer.begin(7, DefaultVertexFormats.POSITION_COLOR);
         
-        // Background for Main Name (Bottom)
-        drawRect(worldrenderer, -width - 2, -2, width + 2, 11);
+        drawRect(worldrenderer, -halfWidth - 2, -2, halfWidth + 2, 11);
 
-        // Dynamic Stacking Logic for Backgrounds
         int currentYOffset = -14;
         if (hasSword) {
             drawRect(worldrenderer, -swordWidth - 2, currentYOffset, swordWidth + 2, currentYOffset + 13);
@@ -99,11 +105,19 @@ public class NameTags {
 
         tessellator.draw();
         
+        GL11.glEnable(GL11.GL_TEXTURE_2D);
         GlStateManager.enableTexture2D();
+        GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F); 
         
-        // Draw Text
-        mc.fontRendererObj.drawStringWithShadow(name, -width, 0, -1);
+        int textX = -halfWidth + logoSpace;
+        mc.fontRendererObj.drawStringWithShadow(name, textX, 0, -1);
+        
+        if (isFoxtrot) {
+            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+            mc.getTextureManager().bindTexture(new net.minecraft.util.ResourceLocation("foxtrot", "icons/fx_logo.png"));
+            net.minecraft.client.gui.Gui.drawModalRectWithCustomSizedTexture(-halfWidth, 0, 0, 0, 9, 9, 9, 9);
+        }
         
         currentYOffset = -12;
         if (hasSword) {
@@ -114,7 +128,7 @@ public class NameTags {
             mc.fontRendererObj.drawStringWithShadow(pantsEnchants, -pantsWidth, currentYOffset, -1);
         }
 
-        // RENDER ITEMS
+        // RENDER ITEMS (Armor Layout Restored + Glint Sandboxed)
         if (showItems) {
             List<ItemStack> items = new ArrayList<>();
             if (player.getHeldItem() != null) items.add(player.getHeldItem());
@@ -126,20 +140,24 @@ public class NameTags {
                 int startX = -(items.size() * 16) / 2;
                 int itemY = hasPants ? -44 : (hasSword ? -32 : -18); 
 
+                GlStateManager.pushMatrix();
+
+                // GLINT FIX: Push Texture Matrix to sandbox the glint texture from the hotbar
+                GlStateManager.matrixMode(GL11.GL_TEXTURE);
+                GlStateManager.pushMatrix();
+                GlStateManager.loadIdentity();
+                GlStateManager.matrixMode(GL11.GL_MODELVIEW);
+
                 GlStateManager.enableRescaleNormal();
                 RenderHelper.enableGUIStandardItemLighting();
-
-                // FIX: Enable depth and depthMask so the glint pass can use GL_EQUAL depth masking properly
-                GlStateManager.enableDepth();
-                GlStateManager.depthMask(true);
 
                 for (ItemStack item : items) {
                     GlStateManager.pushMatrix();
                     GlStateManager.translate(startX, itemY, 0);
-                    GlStateManager.scale(1.0F, 1.0F, 0.01F);
                     
-                    // FIX: Use GL_ALWAYS so items still render through walls but populate the depth buffer correctly
-                    GlStateManager.depthFunc(GL11.GL_ALWAYS);
+                    // PERFECT ARMOR LAYOUT: Disabled depth and flattened scale like your old code
+                    GlStateManager.scale(1.0F, 1.0F, 0.01F);
+                    GlStateManager.disableDepth();
                     
                     float prevZ = mc.getRenderItem().zLevel;
                     mc.getRenderItem().zLevel = -150.0F; 
@@ -150,25 +168,31 @@ public class NameTags {
                     GlStateManager.popMatrix();
                     startX += 16;
                 }
-                
-                // Restore standard depth function
-                GlStateManager.depthFunc(GL11.GL_LEQUAL);
-                
+
                 RenderHelper.disableStandardItemLighting();
                 GlStateManager.disableRescaleNormal();
-                
-                // Restore state back to how the rest of the nametag code expects it
-                GlStateManager.disableDepth();
-                GlStateManager.depthMask(false);
+
+                // GLINT FIX: Pop the texture matrix to prevent it bleeding
+                GlStateManager.matrixMode(GL11.GL_TEXTURE);
+                GlStateManager.popMatrix();
+                GlStateManager.matrixMode(GL11.GL_MODELVIEW);
+
+                GlStateManager.popMatrix();
             }
         }
 
-        // clean clean mr clean.
+        // 2. CLEANUP: Restore Vanilla State for Myau
+        GL11.glEnable(GL11.GL_DEPTH_TEST);
         GlStateManager.enableDepth();
         GlStateManager.depthMask(true);
-        GlStateManager.enableLighting();
+        GL11.glEnable(GL11.GL_TEXTURE_2D);
+        GlStateManager.enableTexture2D();
+        // Lighting remains disabled as expected by RenderWorldLastEvent
+        GL11.glDisable(GL11.GL_BLEND);
         GlStateManager.disableBlend();
+        GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+
         GlStateManager.popMatrix();
     }
 

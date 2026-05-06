@@ -34,7 +34,6 @@ public class AutoClicker {
 
     // --- Toggles ---
     public static boolean enabled = false;
-    public static boolean debugMode = false;
     public static boolean leftClick = true;
     public static boolean fastPlaceEnabled = false; 
     public static boolean holdToClick = true;

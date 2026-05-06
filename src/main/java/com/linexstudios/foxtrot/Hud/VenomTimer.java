@@ -20,8 +20,10 @@ public class VenomTimer extends DraggableHUD {
 
     public static boolean enabled = false;
 
+    private EntityPlayer lastAttackedPlayer = null;
     private EntityPlayer targetPlayer = null;
     private long venomEndTime = 0;
+    private boolean wasPoisoned = false;
 
     public VenomTimer() {
         super("Venom Timer", 10, 50);
@@ -30,42 +32,25 @@ public class VenomTimer extends DraggableHUD {
     @SubscribeEvent
     public void onAttack(AttackEntityEvent event) {
         if (!enabled || mc.thePlayer == null || !(event.target instanceof EntityPlayer)) return;
-
-        ItemStack pants = mc.thePlayer.getCurrentArmor(1);
-        if (pants != null && pants.hasTagCompound()) {
-            NBTTagCompound extra = pants.getTagCompound().getCompoundTag("ExtraAttributes");
-            if (extra != null && extra.hasKey("CustomEnchants")) {
-                NBTTagList enchants = extra.getTagList("CustomEnchants", 10);
-                boolean hasVenom = false;
-                for (int i = 0; i < enchants.tagCount(); i++) {
-                    if (enchants.getCompoundTagAt(i).getString("Key").toLowerCase().contains("venom")) {
-                        hasVenom = true;
-                        break;
-                    }
-                }
-                if (hasVenom) {
-                    targetPlayer = (EntityPlayer) event.target;
-                    venomEndTime = System.currentTimeMillis() + 12000L;
-                }
-            }
-        }
-    }
-
-    @SubscribeEvent
-    public void onNameFormat(PlayerEvent.NameFormat event) {
-        if (!enabled || targetPlayer == null || event.entityPlayer != targetPlayer) return;
-
-        long timeLeft = venomEndTime - System.currentTimeMillis();
-        if (timeLeft > 0) {
-            int seconds = (int) Math.ceil(timeLeft / 1000.0);
-            event.displayname = event.displayname + EnumChatFormatting.DARK_PURPLE + "Venomed: " + EnumChatFormatting.RED + seconds + "s";
-        }
+        // Just remember who we are hitting
+        lastAttackedPlayer = (EntityPlayer) event.target;
     }
 
     @SubscribeEvent
     public void onTick(TickEvent.ClientTickEvent event) {
+        if (event.phase != TickEvent.Phase.START || mc.thePlayer == null || !enabled) return;
+
+        net.minecraft.potion.PotionEffect effect = mc.thePlayer.getActivePotionEffect(net.minecraft.potion.Potion.poison);
+        
+        if (effect != null && lastAttackedPlayer != null) {
+            targetPlayer = lastAttackedPlayer;
+            // Get exact time left in milliseconds from the potion effect (ticks * 50ms)
+            venomEndTime = System.currentTimeMillis() + (effect.getDuration() * 50L);
+        }
+
         if (targetPlayer != null && System.currentTimeMillis() > venomEndTime) {
             targetPlayer = null; 
+            lastAttackedPlayer = null;
         }
     }
 
@@ -83,7 +68,7 @@ public class VenomTimer extends DraggableHUD {
         String text;
 
         if (isEditing) {
-            text = EnumChatFormatting.DARK_PURPLE + "Venomed: " + EnumChatFormatting.RED + "12.0s";
+            text = EnumChatFormatting.DARK_PURPLE + "Venomed: " + EnumChatFormatting.RED + "20.0s";
         } else if (targetPlayer != null && timeLeft > 0) {
             double seconds = Math.round((timeLeft / 1000.0) * 10.0) / 10.0;
             text = EnumChatFormatting.DARK_PURPLE + "Venomed: " + EnumChatFormatting.RED + seconds + "s";

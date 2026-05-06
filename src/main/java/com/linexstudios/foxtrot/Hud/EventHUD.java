@@ -151,6 +151,20 @@ public class EventHUD extends DraggableHUD {
         this.height = currentY;
     }
 
+    public boolean isDragonEggClose() {
+        synchronized (eventsLock) {
+            long currentTime = System.currentTimeMillis();
+            for (PitEvent e : upcomingEvents) {
+                if (e.name.equalsIgnoreCase("Dragon Egg")) {
+                    long diff = e.timestamp - currentTime;
+                    // Active or within 5 minutes
+                    return diff <= 300000;
+                }
+            }
+        }
+        return false;
+    }
+
     private String formatTime(long timestamp, long currentTime) {
         long diff = timestamp - currentTime;
         if (diff <= 60000) {

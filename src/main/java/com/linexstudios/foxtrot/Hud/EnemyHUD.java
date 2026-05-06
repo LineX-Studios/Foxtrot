@@ -1,11 +1,13 @@
 package com.linexstudios.foxtrot.Hud;
 
 import com.linexstudios.foxtrot.Enemy.EnemyManager;
+import com.linexstudios.foxtrot.Handler.MapDetectionHandler;
+import com.linexstudios.foxtrot.Handler.PlayerTrackerHandler;
+import com.linexstudios.foxtrot.Render.BetterCulling;
 import com.linexstudios.foxtrot.Util.SpawnRegions;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.entity.EntityOtherPlayerMP;
-import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
@@ -14,16 +16,13 @@ import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 public class EnemyHUD extends DraggableHUD {
     public static final EnemyHUD instance = new EnemyHUD();
     private final Minecraft mc = Minecraft.getMinecraft();
 
     public static boolean enabled = true;
-    public static boolean debugMode = false;
     public static boolean notificationsEnabled = true;
 
     public static List<String> targetList = new ArrayList<>();
@@ -33,83 +32,83 @@ public class EnemyHUD extends DraggableHUD {
     @SubscribeEvent
     public void onRender(RenderGameOverlayEvent.Post event) {
         if (event.type != RenderGameOverlayEvent.ElementType.TEXT) return;
-        if (mc.currentScreen instanceof EditHUDGui) return;
-        if (mc.currentScreen instanceof HUDSettingsGui) return;
+        if (mc.currentScreen instanceof EditHUDGui || mc.currentScreen instanceof HUDSettingsGui) return;
         render(false, 0, 0); 
     }
 
     @Override
     public void draw(boolean isEditing) {
-        if (!enabled || mc.theWorld == null) return;
+        if (!enabled || mc.theWorld == null || mc.thePlayer == null) return;
+        
+        MapDetectionHandler.updateMap();
 
         FontRenderer fr = mc.fontRendererObj;
         int currentY = 0; 
         int maxWidth = fr.getStringWidth("Enemy List");
         boolean foundEnemy = false;
 
-        Set<String> renderedEnemies = new HashSet<>();
+        List<HUDRow> rows = new ArrayList<>();
+        for (PlayerTrackerHandler.TrackedPlayer player : PlayerTrackerHandler.activePlayers.values()) {
+            if (player.name.equals(mc.thePlayer.getName())) continue;
+            if (!isTarget(player.name)) continue;
 
-        for (EntityPlayer player : mc.theWorld.playerEntities) {
-            if (!(player instanceof EntityOtherPlayerMP)) continue;
-            EntityOtherPlayerMP other = (EntityOtherPlayerMP) player;
-
-            if (!isTarget(other)) continue;
-            
-            String name = other.getName();
-            if (renderedEnemies.contains(name.toLowerCase())) continue;
-            renderedEnemies.add(name.toLowerCase());
-
-            if (!foundEnemy) {
-                fr.drawStringWithShadow(EnumChatFormatting.RED + "" + EnumChatFormatting.BOLD + "Enemy List:", 0, currentY, 0xFFFFFF);
-                currentY += fr.FONT_HEIGHT + 2;
-                foundEnemy = true;
+            EntityOtherPlayerMP other = player.entity;
+            if (other != null) {
+                player.lastKnownGear = getShortEnchants(other);
             }
 
-            String displayName;
-            String rawFormatted = other.getDisplayName().getFormattedText();
-            int nameIndex = rawFormatted.indexOf(name);
-            if (nameIndex >= 0) {
-                displayName = rawFormatted.substring(0, nameIndex + name.length());
-            } else {
-                displayName = EnumChatFormatting.GRAY + "[?] " + EnumChatFormatting.RED + name;
-            }
-
-            String currentUUID = other.getUniqueID().toString();
+            String displayName = player.lastKnownNamePlate != null ? player.lastKnownNamePlate : (EnumChatFormatting.GRAY + "[?] " + EnumChatFormatting.RED + player.name);
+            String currentUUID = player.uuid;
             String cachedName = EnemyManager.enemyCache.get(currentUUID);
-            
-            if (cachedName != null && !cachedName.equalsIgnoreCase(name)) {
+            if (cachedName != null && !cachedName.equalsIgnoreCase(player.name)) {
                 displayName += EnumChatFormatting.YELLOW + " (" + EnumChatFormatting.YELLOW + cachedName + EnumChatFormatting.YELLOW + ")";
             }
+            displayName = truncate(displayName, 32);
+            String finalDisplayName = EnumChatFormatting.DARK_RED + "[" + EnumChatFormatting.RED + "E" + EnumChatFormatting.DARK_RED + "] " + EnumChatFormatting.RESET + displayName;
+            
+            String gearPart = (player.lastKnownGear != null && !player.lastKnownGear.isEmpty()) ? player.lastKnownGear : "";
+            String locStr = "";
+            if (other != null) {
+                int distance = Math.round(mc.thePlayer.getDistanceToEntity(other));
+                EnumChatFormatting distColor = (distance >= 100) ? EnumChatFormatting.GREEN : (distance >= 60) ? EnumChatFormatting.YELLOW : (distance >= 30) ? EnumChatFormatting.GOLD : EnumChatFormatting.RED;
+                locStr = SpawnRegions.getRegionString(other) + EnumChatFormatting.GRAY + " (" + distColor + distance + "m" + EnumChatFormatting.GRAY + ")";
+            }
 
-            displayName = EnumChatFormatting.DARK_RED + "[" + EnumChatFormatting.RED + "E" + EnumChatFormatting.DARK_RED + "] " + EnumChatFormatting.RESET + displayName;
-
-            String gear = getShortEnchants(other);
-            String dist = SpawnRegions.getLocationFormat(mc.thePlayer, other);
-
-            String fullLine = displayName + EnumChatFormatting.GRAY + " - " + gear + EnumChatFormatting.GRAY + " - " + dist;
-            fr.drawStringWithShadow(fullLine, 0, currentY, 0xFFFFFF);
-
-            int lineWidth = fr.getStringWidth(fullLine);
-            if (lineWidth > maxWidth) maxWidth = lineWidth;
-            currentY += fr.FONT_HEIGHT;
+            rows.add(new HUDRow(finalDisplayName, gearPart, locStr));
         }
 
-        if (!foundEnemy) {
+        if (rows.isEmpty()) {
             if (isEditing) {
-                fr.drawStringWithShadow(EnumChatFormatting.RED + "" + EnumChatFormatting.BOLD + "Enemy List:", 0, currentY, 0xFFFFFF);
-                currentY += fr.FONT_HEIGHT + 2;
-                String placeholder = EnumChatFormatting.DARK_RED + "[" + EnumChatFormatting.RED + "E" + EnumChatFormatting.DARK_RED + "] " + EnumChatFormatting.GRAY + "[120] Player " + EnumChatFormatting.YELLOW + "(" + EnumChatFormatting.YELLOW + "OLD_USERNAME" + EnumChatFormatting.YELLOW + ")" + EnumChatFormatting.GRAY + " - " + EnumChatFormatting.GREEN + "" + EnumChatFormatting.BOLD + "SPAWN";
-                fr.drawStringWithShadow(placeholder, 0, currentY, 0xFFFFFF);
-                currentY += fr.FONT_HEIGHT;
-                maxWidth = Math.max(maxWidth, fr.getStringWidth(placeholder));
+                String placeholder = EnumChatFormatting.DARK_RED + "[" + EnumChatFormatting.RED + "E" + EnumChatFormatting.DARK_RED + "] " + EnumChatFormatting.GRAY + "[120] Player" + EnumChatFormatting.GRAY + " - " + EnumChatFormatting.GREEN + "" + EnumChatFormatting.BOLD + "SPAWN";
+                rows.add(new HUDRow(placeholder, "DIAMOND", "SPAWN (15m)"));
             } else {
                 this.width = 0; this.height = 0;
                 return;
             }
         }
 
+        fr.drawStringWithShadow(EnumChatFormatting.RED + "" + EnumChatFormatting.BOLD + "Enemy List:", 0, currentY, 0xFFFFFF);
+        currentY += fr.FONT_HEIGHT + 2;
+
+        for (HUDRow row : rows) {
+            String fullLine = row.name;
+            if (!row.gear.isEmpty()) fullLine += EnumChatFormatting.GRAY + " - " + row.gear;
+            if (!row.loc.isEmpty()) fullLine += EnumChatFormatting.GRAY + " - " + row.loc;
+            
+            fr.drawStringWithShadow(fullLine, 0, currentY, 0xFFFFFF);
+            int lineWidth = com.linexstudios.foxtrot.Util.FastFont.getWidth(fullLine);
+            if (lineWidth > maxWidth) maxWidth = lineWidth;
+            
+            currentY += fr.FONT_HEIGHT;
+        }
+
         this.width = maxWidth;
         this.height = currentY;
+    }
+
+    private static class HUDRow {
+        String name, gear, loc;
+        HUDRow(String n, String g, String l) { this.name = n; this.gear = g; this.loc = l; }
     }
 
     private String getShortEnchants(EntityOtherPlayerMP player) {
@@ -128,9 +127,7 @@ public class EnemyHUD extends DraggableHUD {
                 }
                 if (pants.hasDisplayName() && pants.getDisplayName().contains("Dark Pants")) return EnumChatFormatting.DARK_PURPLE + "Darks";
             }
-            if (pants.getItem() == net.minecraft.init.Items.diamond_leggings) {
-                return EnumChatFormatting.AQUA + "" + EnumChatFormatting.BOLD + "DIAMOND";
-            }
+            if (pants.getItem() == net.minecraft.init.Items.diamond_leggings) return EnumChatFormatting.AQUA + "" + EnumChatFormatting.BOLD + "DIAMOND";
         }
         return EnumChatFormatting.GRAY + "" + EnumChatFormatting.BOLD + "SHOP";
     }
@@ -139,11 +136,8 @@ public class EnemyHUD extends DraggableHUD {
         if (key == null) return null;
         switch (key.toLowerCase()) {
             case "regularity": return EnumChatFormatting.DARK_RED + "Reg";
-            case "immune_true_damage": 
-            case "mirror":
-            case "reflection": return EnumChatFormatting.WHITE + "Mirror";
-            case "respawn_absorption": 
-            case "respawn_with_absorption": return EnumChatFormatting.GOLD + "Abs";
+            case "immune_true_damage": case "mirror": case "reflection": return EnumChatFormatting.WHITE + "Mirror";
+            case "respawn_absorption": case "respawn_with_absorption": return EnumChatFormatting.GOLD + "Abs";
             case "critically_funky": return EnumChatFormatting.DARK_AQUA + "Crit Funky";
             case "solitude": return EnumChatFormatting.RED + "Soli";
             case "venom": case "combo_venom": return EnumChatFormatting.DARK_PURPLE + "Venom";
@@ -155,28 +149,10 @@ public class EnemyHUD extends DraggableHUD {
         }
     }
 
-    public static boolean isTarget(EntityPlayer player) {
-        if (player == null) return false;
-        
-        String currentName = player.getName();
-        String currentUUID = player.getUniqueID().toString();
-
-        if (EnemyManager.enemyCache.containsKey(currentUUID)) {
-            return true;
-        }
-
-        if (targetList.stream().anyMatch(t -> t.equalsIgnoreCase(currentName))) {
-            String expectedUUID = EnemyManager.getUUIDFromName(currentName);
-            if (expectedUUID != null && !expectedUUID.equals(currentUUID)) {
-                return false; 
-            }
-            return true;
-        }
-        return false;
-    }
-
     public static boolean isTarget(String name) {
         if (name == null) return false;
+        String expectedUUID = EnemyManager.getUUIDFromName(name);
+        if (expectedUUID != null && EnemyManager.enemyCache.containsKey(expectedUUID)) return true;
         return targetList.stream().anyMatch(t -> t.equalsIgnoreCase(name));
     }
 }

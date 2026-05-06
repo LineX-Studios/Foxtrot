@@ -12,6 +12,8 @@ public abstract class DraggableHUD {
     private static final List<DraggableHUD> REGISTRY = new ArrayList<>();
 
     public int x, y;
+    public int startX, startY;
+    public double relativeX = -1, relativeY = -1; // -1 means uninitialized
     public int width, height;
     public float scale = 1.0f;
     public boolean isHorizontal = false; 
@@ -23,12 +25,50 @@ public abstract class DraggableHUD {
 
     public DraggableHUD(String name, int startX, int startY) {
         this.name = name;
+        this.startX = startX;
+        this.startY = startY;
         this.x = startX;
         this.y = startY;
+        
         // Register itself upon creation
         if (!REGISTRY.contains(this)) {
             REGISTRY.add(this);
         }
+    }
+
+    /**
+     * Updates the absolute pixel coordinates based on current screen size and relative positions.
+     */
+    public void updateAbsolutePos() {
+        if (relativeX == -1 || relativeY == -1) {
+            // First time or legacy config: calculate relative from current absolute
+            saveRelativePos();
+            return;
+        }
+        net.minecraft.client.gui.ScaledResolution sr = new net.minecraft.client.gui.ScaledResolution(Minecraft.getMinecraft());
+        int calcX = (int) (relativeX * sr.getScaledWidth());
+        int calcY = (int) (relativeY * sr.getScaledHeight());
+        
+        this.x = calcX;
+        this.y = calcY;
+    }
+
+    public void resetPosition() {
+        this.x = startX;
+        this.y = startY;
+        this.relativeX = -1;
+        this.relativeY = -1;
+        this.scale = 1.0f;
+        saveRelativePos();
+    }
+
+    /**
+     * Saves the current absolute pixel coordinates as relative percentages.
+     */
+    public void saveRelativePos() {
+        net.minecraft.client.gui.ScaledResolution sr = new net.minecraft.client.gui.ScaledResolution(Minecraft.getMinecraft());
+        this.relativeX = (double) this.x / sr.getScaledWidth();
+        this.relativeY = (double) this.y / sr.getScaledHeight();
     }
 
     public static List<DraggableHUD> getRegistry() {
@@ -46,7 +86,28 @@ public abstract class DraggableHUD {
 
     public abstract void draw(boolean isEditing);
 
+    private int lastScreenWidth = -1;
+    private int lastScreenHeight = -1;
+
     public void render(boolean isEditing, int mouseX, int mouseY) {
+        if (!HUDController.enabled) return;
+        
+        net.minecraft.client.gui.ScaledResolution sr = new net.minecraft.client.gui.ScaledResolution(Minecraft.getMinecraft());
+        if (sr.getScaledWidth() != lastScreenWidth || sr.getScaledHeight() != lastScreenHeight) {
+            if (lastScreenWidth != -1) {
+                // Screen was resized, update positions based on percentages
+                updateAbsolutePos();
+            } else if (relativeX == -1 || relativeY == -1) {
+                // First render and NO config loaded: save current defaults as relative
+                saveRelativePos();
+            } else {
+                // First render but config WAS loaded: just calculate absolute
+                updateAbsolutePos();
+            }
+            lastScreenWidth = sr.getScaledWidth();
+            lastScreenHeight = sr.getScaledHeight();
+        }
+        
         boolean hovered = isHovered(mouseX, mouseY);
 
         GL11.glPushMatrix();
@@ -87,6 +148,13 @@ public abstract class DraggableHUD {
     }
 
     private void drawCleanBox(float x, float y, float w, float h, int bgColor, int borderColor) {
+        net.minecraft.client.renderer.GlStateManager.pushMatrix();
+        net.minecraft.client.renderer.GlStateManager.disableDepth();
+        net.minecraft.client.renderer.GlStateManager.enableBlend();
+        net.minecraft.client.renderer.GlStateManager.disableTexture2D();
+        net.minecraft.client.renderer.GlStateManager.tryBlendFuncSeparate(770, 771, 1, 0);
+        net.minecraft.client.renderer.GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+
         Gui.drawRect((int)x, (int)y, (int)(x + w), (int)(y + h), bgColor);
         
         float alpha = (float)(borderColor >> 24 & 255) / 255.0F;
@@ -94,12 +162,7 @@ public abstract class DraggableHUD {
         float green = (float)(borderColor >> 8 & 255) / 255.0F;
         float blue = (float)(borderColor & 255) / 255.0F;
         
-        GL11.glPushMatrix();
-        GL11.glEnable(GL11.GL_BLEND);
-        GL11.glDisable(GL11.GL_TEXTURE_2D);
-        GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
         GL11.glColor4f(red, green, blue, alpha);
-        
         GL11.glLineWidth(1.0F); 
         
         GL11.glBegin(GL11.GL_LINE_LOOP);
@@ -109,9 +172,11 @@ public abstract class DraggableHUD {
         GL11.glVertex2f(x + w, y);
         GL11.glEnd();
         
-        GL11.glEnable(GL11.GL_TEXTURE_2D);
-        GL11.glDisable(GL11.GL_BLEND);
-        GL11.glPopMatrix();
+        net.minecraft.client.renderer.GlStateManager.enableTexture2D();
+        net.minecraft.client.renderer.GlStateManager.disableBlend();
+        net.minecraft.client.renderer.GlStateManager.enableDepth();
+        net.minecraft.client.renderer.GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        net.minecraft.client.renderer.GlStateManager.popMatrix();
     }
 
     private void drawCornerBox(float cx, float cy, float halfSize) {
@@ -161,5 +226,37 @@ public abstract class DraggableHUD {
         this.scale += scaleChange;
         if (this.scale < MIN_SCALE) this.scale = MIN_SCALE;
         if (this.scale > MAX_SCALE) this.scale = MAX_SCALE;
+    }
+
+    public String truncate(String text, int maxChars) {
+        if (text == null) return "";
+        String plain = net.minecraft.util.EnumChatFormatting.getTextWithoutFormattingCodes(text);
+        if (plain.length() <= maxChars) return text;
+        
+        int length = 0;
+        StringBuilder sb = new StringBuilder();
+        boolean inFormat = false;
+        
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (c == '\u00A7') {
+                sb.append(c);
+                inFormat = true;
+                continue;
+            }
+            if (inFormat) {
+                sb.append(c);
+                inFormat = false;
+                continue;
+            }
+            if (length < maxChars) {
+                sb.append(c);
+                length++;
+            } else {
+                sb.append("..");
+                break;
+            }
+        }
+        return sb.toString();
     }
 }

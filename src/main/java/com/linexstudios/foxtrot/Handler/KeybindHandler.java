@@ -18,7 +18,7 @@ public class KeybindHandler {
     public static void init() {
         toggleNameTags = new KeyBinding("Toggle NameTags", Keyboard.KEY_X, "Foxtrot");
         openHudEditor = new KeyBinding("Open HUD Editor", Keyboard.KEY_RSHIFT, "Foxtrot");
-        
+
         ClientRegistry.registerKeyBinding(toggleNameTags);
         ClientRegistry.registerKeyBinding(openHudEditor);
     }
@@ -27,7 +27,8 @@ public class KeybindHandler {
     public void onKeyInput(InputEvent.KeyInputEvent event) {
         Minecraft mc = Minecraft.getMinecraft();
         // Null check to prevent crashes during world transitions
-        if (mc.theWorld == null || mc.thePlayer == null) return;
+        if (mc.theWorld == null || mc.thePlayer == null)
+            return;
 
         if (openHudEditor.isPressed()) {
             mc.displayGuiScreen(new EditHUDGui());
@@ -39,11 +40,11 @@ public class KeybindHandler {
             ConfigHandler.saveConfig();
 
             String status = NameTags.enabled ? EnumChatFormatting.GREEN + "ON" : EnumChatFormatting.RED + "OFF";
-            String prefix = EnumChatFormatting.GRAY + "[" + EnumChatFormatting.RED + "FOXTROT" + EnumChatFormatting.GRAY + "] ";
-            
+            String prefix = EnumChatFormatting.GRAY + "[" + EnumChatFormatting.RED + "Foxtrot" + EnumChatFormatting.GRAY
+                    + "] ";
+
             mc.thePlayer.addChatMessage(new ChatComponentText(
-                    prefix + EnumChatFormatting.YELLOW + "NameTags: " + status
-            ));
+                    prefix + EnumChatFormatting.GRAY + "NameTags: " + status));
         }
     }
 }

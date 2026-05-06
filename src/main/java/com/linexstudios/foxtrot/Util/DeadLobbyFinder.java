@@ -1,5 +1,6 @@
 package com.linexstudios.foxtrot.Util;
 
+import com.linexstudios.foxtrot.Handler.MapDetectionHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.scoreboard.Score;
 import net.minecraft.scoreboard.ScoreObjective;
@@ -31,11 +32,8 @@ public class DeadLobbyFinder {
 
         long now = System.currentTimeMillis();
         
-        // =====================================
-        // STATE 1: WAITING IN HUB -> GO TO PIT
-        // =====================================
         if (currentState == State.WAITING_IN_HUB) {
-            if (now - actionTimer > 4500) { // Wait 4.5s in hub before joining pit
+            if (now - actionTimer > 4500) { 
                 mc.thePlayer.sendChatMessage("/play pit");
                 currentState = State.WAITING_IN_PIT;
                 actionTimer = now;
@@ -43,12 +41,9 @@ public class DeadLobbyFinder {
             return;
         }
 
-        // =====================================
-        // STATE 2: WAITING IN PIT -> SCAN LOBBY
-        // =====================================
         if (now - actionTimer < warpDelayMs) return;
 
-        if (!Ranks.instance.isInPit()) {
+        if (!MapDetectionHandler.isInPit()) {
             mc.thePlayer.sendChatMessage("/play pit");
             actionTimer = now;
             return;
@@ -68,9 +63,6 @@ public class DeadLobbyFinder {
             return;
         }
 
-        // ========================================
-        //  STATE 3: TOO MANY PLAYERS -> GO TO HUB
-        // ========================================
         sendMessage(EnumChatFormatting.YELLOW + "Lobby has " + currentPlayers + " players. Switching lobbies...");
         mc.thePlayer.sendChatMessage("/hub");
         currentState = State.WAITING_IN_HUB;
@@ -88,7 +80,7 @@ public class DeadLobbyFinder {
             ScorePlayerTeam team = scoreboard.getPlayersTeam(score.getPlayerName());
             if (team != null) {
                 String cleanLine = StringUtils.stripControlCodes(team.formatString("")).toLowerCase();
-                if (cleanLine.contains("fighting") || cleanLine.contains("combat") || cleanLine.contains("bountied")) {
+                if (cleanLine.contains("fighting") || cleanLine.contains("combat")) {
                     return true;
                 }
             }
@@ -99,9 +91,8 @@ public class DeadLobbyFinder {
     public static void toggle() {
         enabled = !enabled;
         if (Minecraft.getMinecraft().thePlayer != null) {
-            String prefix = EnumChatFormatting.GRAY + "[" + EnumChatFormatting.RED + "Foxtrot" + EnumChatFormatting.GRAY + "] ";
             String status = enabled ? EnumChatFormatting.GREEN + "ON" : EnumChatFormatting.RED + "OFF";
-            Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText(prefix + EnumChatFormatting.YELLOW + "Dead Lobby Finder: " + status));
+            Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText(EnumChatFormatting.GRAY + "[" + EnumChatFormatting.RED + "Foxtrot" + EnumChatFormatting.GRAY + "] " + EnumChatFormatting.YELLOW + "Dead Lobby Finder: " + status));
         }
         
         if (enabled) {
@@ -111,7 +102,6 @@ public class DeadLobbyFinder {
     }
 
     private void sendMessage(String text) {
-        String prefix = EnumChatFormatting.GRAY + "[" + EnumChatFormatting.RED + "Foxtrot" + EnumChatFormatting.GRAY + "] ";
-        mc.thePlayer.addChatMessage(new ChatComponentText(prefix + text));
+        mc.thePlayer.addChatMessage(new ChatComponentText(EnumChatFormatting.GRAY + "[" + EnumChatFormatting.RED + "Foxtrot" + EnumChatFormatting.GRAY + "] " + text));
     }
 }

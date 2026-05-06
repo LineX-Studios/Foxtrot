@@ -1,6 +1,7 @@
 package com.linexstudios.foxtrot.mixins;
 
 import com.linexstudios.foxtrot.Util.Ranks;
+import com.linexstudios.foxtrot.Handler.MapDetectionHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.scoreboard.ScorePlayerTeam;
 import net.minecraft.scoreboard.Team;
@@ -29,7 +30,8 @@ public class MixinScorePlayerTeam {
         try {
             String unformatted = StringUtils.stripControlCodes(formatted);
             
-            if (Ranks.isEnabled && Ranks.instance != null && Ranks.instance.isInPit()) {
+            // FIXED: Uses the Centralized Map Detector
+            if (Ranks.isEnabled && Ranks.instance != null && MapDetectionHandler.isInPit()) {
                 
                 if (unformatted.startsWith("Level:")) {
                     if (Ranks.changeLevel) {
@@ -59,9 +61,7 @@ public class MixinScorePlayerTeam {
                         }
                     }
                 }
-                
             }
-        } catch (Exception e) {
-        }
+        } catch (Exception e) {}
     }
 }

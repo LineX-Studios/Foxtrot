@@ -1,21 +1,41 @@
 package com.linexstudios.foxtrot.mixins;
 
 import com.linexstudios.foxtrot.Hud.TelebowHUD;
-import com.linexstudios.foxtrot.WhoGotBanned;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.network.NetHandlerPlayClient;
 import net.minecraft.network.play.server.S02PacketChat;
-import net.minecraft.network.play.server.S38PacketPlayerListItem;
+import net.minecraft.network.play.server.S3BPacketScoreboardObjective;
+import net.minecraft.network.play.server.S3EPacketTeams;
 import net.minecraft.util.EnumChatFormatting;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 @Mixin(NetHandlerPlayClient.class)
 public class MixinNetHandlerPlayClient {
+
+    // ==========================================
+    //    SCOREBOARD NULL-SAFETY GUARD (NPE FIX)
+    //  Vanilla 1.8.9 race condition: Hypixel fires
+    //  S3B/S3E packets during server transfer while
+    //  the local scoreboard has already been reset.
+    // ==========================================
+    @Inject(method = "handleScoreboardObjective", at = @At("HEAD"), cancellable = true)
+    public void onHandleScoreboardObjective(S3BPacketScoreboardObjective packetIn, CallbackInfo ci) {
+        Minecraft mc = Minecraft.getMinecraft();
+        if (mc.theWorld == null || mc.theWorld.getScoreboard() == null) {
+            ci.cancel(); // Drop packet — scoreboard not ready yet
+        }
+    }
+
+    @Inject(method = "handleTeams", at = @At("HEAD"), cancellable = true)
+    public void onHandleTeams(S3EPacketTeams packetIn, CallbackInfo ci) {
+        Minecraft mc = Minecraft.getMinecraft();
+        if (mc.theWorld == null || mc.theWorld.getScoreboard() == null) {
+            ci.cancel(); // Drop packet — scoreboard not ready yet
+        }
+    }
 
     // ==========================================
     //           TELEBOW CHAT INJECTION
@@ -26,19 +46,9 @@ public class MixinNetHandlerPlayClient {
 
         if (packetIn.getType() == 2) {
             String cleanMessage = EnumChatFormatting.getTextWithoutFormattingCodes(packetIn.getChatComponent().getUnformattedText()).toLowerCase();
-
-            if (cleanMessage.contains("telebow") && cleanMessage.contains("cooldown")) {
-                ci.cancel();
-
-                if (TelebowHUD.enabled) {
-                    Matcher m = Pattern.compile("(\\d+)s").matcher(cleanMessage);
-                    if (!m.find()) m = Pattern.compile("(\\d+) seconds").matcher(cleanMessage);
-                    
-                    if (m.find()) {
-                        long seconds = Long.parseLong(m.group(1));
-                        TelebowHUD.instance.setCooldown(seconds);
-                    }
-                }
+            
+            if (cleanMessage.contains("telebow cooldown:") || cleanMessage.contains("you cannot use this right now!")) {
+                ci.cancel(); 
             }
         } 
         else {
@@ -51,26 +61,6 @@ public class MixinNetHandlerPlayClient {
                 cleanMessage.contains("DEATH!")) {
                 
                 TelebowHUD.instance.clearCooldown();
-            }
-        }
-    }
-
-    // ==========================================
-    //        WHO GOT BANNED TABLIST INJECTION
-    // ==========================================
-    @Inject(method = "handlePlayerListItem", at = @At("HEAD"))
-    public void onPlayerListUpdate(S38PacketPlayerListItem packetIn, CallbackInfo ci) {
-        // FIXED: Using 1.8.9 MCP mapping names
-        if (packetIn.func_179768_b() == S38PacketPlayerListItem.Action.REMOVE_PLAYER) {
-            
-            for (S38PacketPlayerListItem.AddPlayerData data : packetIn.func_179767_a()) {
-                if (data.getProfile() != null && data.getProfile().getName() != null) {
-                    String name = data.getProfile().getName();
-                    
-                    if (!name.startsWith("§")) {
-                        WhoGotBanned.instance.logPlayerRemoval(name);
-                    }
-                }
             }
         }
     }

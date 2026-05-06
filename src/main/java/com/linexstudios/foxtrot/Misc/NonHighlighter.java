@@ -1,6 +1,6 @@
 package com.linexstudios.foxtrot.Misc;
 
-import com.linexstudios.foxtrot.Util.Ranks;
+import com.linexstudios.foxtrot.Handler.MapDetectionHandler;
 import com.linexstudios.foxtrot.Render.RenderUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
@@ -25,28 +25,19 @@ public class NonHighlighter {
     
     public static boolean enabled = false;
 
-    // Only start highlighting when they reach 8.0 HP (4.0 hearts) or lower
     private static final float HIGHLIGHT_HP_THRESHOLD = 8.0f;
 
     @SubscribeEvent
     public void onRenderWorld(RenderWorldLastEvent event) {
-        if (!enabled || mc.thePlayer == null || mc.theWorld == null || !Ranks.instance.isInPit()) return;
+        // FIXED: Replaced Ranks.instance.isInPit() with MapDetectionHandler.isInPit()
+        if (!enabled || mc.thePlayer == null || mc.theWorld == null || !MapDetectionHandler.isInPit()) return;
 
         for (EntityPlayer player : mc.theWorld.playerEntities) {
-            // Ignore ourselves, dead players, and invisible
             if (player == mc.thePlayer || player.isDead || player.getHealth() <= 0 || player.isInvisible()) continue;
-
-            // Ensure they are in Mid
             if (Math.abs(player.posX) > 25 || Math.abs(player.posZ) > 25) continue;
-
-            // Only highlight if they are actually low HP
             float hp = player.getHealth();
             if (hp > HIGHLIGHT_HP_THRESHOLD) continue;
-
-            // Check: Must NOT wear Diamond or Mystics
             if (!isNon(player)) continue;
-
-            // Render the ESP and Nametag
             renderNonESP(player, hp, event.partialTicks);
         }
     }
@@ -57,8 +48,6 @@ public class NonHighlighter {
             if (armorPiece != null && armorPiece.getItem() instanceof ItemArmor) {
                 ItemArmor armor = (ItemArmor) armorPiece.getItem();
                 ItemArmor.ArmorMaterial mat = armor.getArmorMaterial();
-                
-                // If they have any Diamond or mystic pants dont show them
                 if (mat == ItemArmor.ArmorMaterial.DIAMOND || mat == ItemArmor.ArmorMaterial.LEATHER) {
                     return false;
                 }
@@ -76,31 +65,21 @@ public class NonHighlighter {
         float r, g, b;
         EnumChatFormatting textColor;
 
-        if (hp <= 4.0f) {         // 2 Hearts or lower -> RED
+        if (hp <= 4.0f) {
             r = 1.0f; g = 0.0f; b = 0.0f;
             textColor = EnumChatFormatting.RED;
-        } else {                  // 2.5 to 4 Hearts -> ORANGE
+        } else {
             r = 1.0f; g = 0.5f; b = 0.0f;
             textColor = EnumChatFormatting.GOLD;
         }
 
-        AxisAlignedBB bb = player.getEntityBoundingBox().offset(
-                -player.posX + x, 
-                -player.posY + y, 
-                -player.posZ + z
-        );
+        AxisAlignedBB bb = player.getEntityBoundingBox().offset(-player.posX + x, -player.posY + y, -player.posZ + z);
 
-        // ==========================================
-        // 1.       RenderUtils 3D Drawing
-        // ==========================================
         RenderUtils.setup3D();
         RenderUtils.drawFilledBox(bb, r, g, b, 0.25F);
         RenderUtils.drawOutlinedBox(bb, r, g, b, 1.0F, 2.0F);
         RenderUtils.end3D();
 
-        // ==========================================
-        // 2.           DRAW HP NAMETAG
-        // ==========================================
         GlStateManager.pushMatrix();
         GlStateManager.enableTexture2D();
         String hpText = textColor + new DecimalFormat("0.1").format(hp) + " HP";

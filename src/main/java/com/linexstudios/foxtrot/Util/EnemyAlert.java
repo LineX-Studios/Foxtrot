@@ -27,30 +27,23 @@ public class EnemyAlert {
             String currentName = player.getName();
             String uuid = player.getUniqueID().toString();
 
-            // ONLY alert if EnemyHUD fully validates them (Checks for UUID spoofing)
-            if (EnemyHUD.isTarget(player) && !alertedThisLobby.contains(uuid)) {
+            // FIXED: Pass the player's name as a String
+            if (EnemyHUD.isTarget(currentName) && !alertedThisLobby.contains(uuid)) {
                 alertedThisLobby.add(uuid);
 
                 String cachedName = EnemyManager.enemyCache.get(uuid);
 
-                // If we have a cached UUID for them, check if their name changed!
                 if (cachedName != null && !cachedName.equals(currentName)) {
                     String alert = EnumChatFormatting.GRAY + "[" + EnumChatFormatting.RED + "Foxtrot" + EnumChatFormatting.GRAY + "] "
                             + EnumChatFormatting.DARK_RED + EnumChatFormatting.BOLD + "NAME CHANGE: "
                             + EnumChatFormatting.GRAY + cachedName + EnumChatFormatting.GOLD + " is now " + EnumChatFormatting.GREEN + currentName + EnumChatFormatting.GREEN + "!";
                     Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText(alert));
 
-                    // Automatically update the main enemies.txt list so commands still work on their new name
                     if (!EnemyHUD.targetList.contains(currentName)) {
                         EnemyHUD.targetList.add(currentName);
                         ConfigHandler.saveConfig();
                     }
-                    
-                    // NOTE: We DO NOT update enemyCache here anymore! 
-                    // Leaving the original name in the cache allows EnemyHUD to read it and display the Alias!
-                    
                 } else {
-                    // Standard Join Alert
                     String alert = EnumChatFormatting.GRAY + "[" + EnumChatFormatting.RED + "Foxtrot" + EnumChatFormatting.GRAY + "] "
                             + EnumChatFormatting.DARK_RED + EnumChatFormatting.BOLD + "ENEMY: "
                             + EnumChatFormatting.RED + currentName + EnumChatFormatting.YELLOW + " has entered your lobby!";

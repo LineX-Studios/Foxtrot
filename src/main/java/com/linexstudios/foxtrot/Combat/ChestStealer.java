@@ -7,7 +7,6 @@ import net.minecraft.inventory.*;
 import net.minecraft.item.*;
 import net.minecraft.enchantment.*;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.common.gameevent.InputEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraft.util.*;
 import java.util.Random;
@@ -21,19 +20,25 @@ public class ChestStealer {
     public static float minDelay = 1f, maxDelay = 2f, openDelay = 1f;
 
     private int clickDelay = 0, oDelay = 0;
-    private boolean inChest = false, warnedFull = false;
+    private boolean inChest = false, warnedFull = false, keyWasDown = false;
 
-    @SubscribeEvent
-    public void onKeyInput(InputEvent.KeyInputEvent event) {
-        if (Foxtrot.toggleChestStealerKey != null && Foxtrot.toggleChestStealerKey.isPressed()) {
-            enabled = !enabled;
-            if (mc.thePlayer != null) mc.thePlayer.addChatMessage(new ChatComponentText(EnumChatFormatting.GRAY + "[" + EnumChatFormatting.RED + "Foxtrot" + EnumChatFormatting.GRAY + "] " + EnumChatFormatting.GRAY + "Chest Stealer: " + (enabled ? EnumChatFormatting.GREEN + "ON" : EnumChatFormatting.RED + "OFF")));
-        }
-    }
+    // Key Input handled in onTick to support GUI toggling
 
     @SubscribeEvent
     public void onTick(TickEvent.ClientTickEvent event) {
-        if (event.phase != TickEvent.Phase.START || mc.thePlayer == null || !enabled) return;
+        if (event.phase != TickEvent.Phase.START || mc.thePlayer == null) return;
+
+        // Support toggling even in GUIs
+        if (Foxtrot.toggleChestStealerKey != null && !(mc.currentScreen instanceof net.minecraft.client.gui.GuiChat)) {
+            boolean isDown = org.lwjgl.input.Keyboard.isKeyDown(Foxtrot.toggleChestStealerKey.getKeyCode());
+            if (isDown && !keyWasDown) {
+                enabled = !enabled;
+                mc.thePlayer.addChatMessage(new ChatComponentText(EnumChatFormatting.GRAY + "[" + EnumChatFormatting.RED + "Foxtrot" + EnumChatFormatting.GRAY + "] " + EnumChatFormatting.GRAY + "Chest Stealer: " + (enabled ? EnumChatFormatting.GREEN + "ON" : EnumChatFormatting.RED + "OFF")));
+            }
+            keyWasDown = isDown;
+        }
+
+        if (!enabled) return;
         if (clickDelay > 0) clickDelay--;
         if (oDelay > 0) oDelay--;
 

@@ -1,5 +1,6 @@
-package com.linexstudios.foxtrot.Handler;
+package com.linexstudios.foxtrot.Handler.Telemetry;
 
+import com.linexstudios.foxtrot.Handler.ConfigHandler;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -39,7 +40,7 @@ public class TelemetryManager {
                 public void run() {
                     sendPing();
                 }
-            }, 180000, 180000); 
+            }, 60000, 60000); 
         }
     }
 
@@ -68,7 +69,25 @@ public class TelemetryManager {
                     modVersion = "0.7.4"; 
                 }
 
-                String jsonPayload = "{\"anonId\": \"" + anonymousClientId + "\", \"version\": \"" + modVersion + "\"}";
+                String playerHash = "";
+                try {
+                    String rawUuid = net.minecraft.client.Minecraft.getMinecraft().getSession().getPlayerID().replace("-", "").toLowerCase();
+                    java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
+                    byte[] hash = digest.digest(rawUuid.getBytes(StandardCharsets.UTF_8));
+                    StringBuilder hexString = new StringBuilder();
+                    for (byte b : hash) {
+                        String hex = Integer.toHexString(0xff & b);
+                        if(hex.length() == 1) hexString.append('0');
+                        hexString.append(hex);
+                    }
+                    playerHash = hexString.toString();
+                } catch (Exception ignored) {}
+
+                String jsonPayload = "{\"anonId\": \"" + anonymousClientId + "\", \"version\": \"" + modVersion + "\", \"hash\": \"" + playerHash + "\", \"cape\": \"" + com.linexstudios.foxtrot.Handler.ConfigHandler.selectedCape + "\"}";
+
+                if (ConfigHandler.globalDebug) {
+                    System.out.println("[Foxtrot-API] Sending ping payload: " + jsonPayload);
+                }
 
                 try (OutputStream os = conn.getOutputStream()) {
                     byte[] input = jsonPayload.getBytes(StandardCharsets.UTF_8);

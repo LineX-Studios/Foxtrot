@@ -45,7 +45,7 @@ public class NickedManager {
         String display = event.displayname;
 
         // 1. Friends Check
-        if (com.linexstudios.foxtrot.Hud.FriendsHUD.isFriend(username)) {
+        if (com.linexstudios.foxtrot.Hud.FriendsHUD.isFriend(event.entityPlayer.getUniqueID().toString(), username)) {
             display = EnumChatFormatting.DARK_GREEN + "[" + EnumChatFormatting.GREEN + "F" + EnumChatFormatting.DARK_GREEN + "] " + EnumChatFormatting.RESET + display;
         } 
         // 2. Enemy Check

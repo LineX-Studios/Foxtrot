@@ -10,7 +10,16 @@
     "MixinNetHandlerPlayClient",
     "MixinEntityPlayerSP",
     "MixinPlayerControllerMP",
-    "MixinRenderItem"
+    "MixinFontRenderer",
+    "MixinGuiUtilRenderComponents",
+    "MixinRenderItem",
+    "MixinNetworkManager",
+    "IAccessorC17PacketCustomPayload",
+    "MixinAbstractClientPlayer",
+    "MixinGuiPlayerTabOverlay",
+    "MixinRendererLivingEntity",
+    "MixinNetworkPlayerInfo",
+    "MixinLayerCape"
   ],
   "client": [
   ],
