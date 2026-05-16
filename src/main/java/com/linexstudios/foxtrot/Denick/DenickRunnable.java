@@ -56,19 +56,24 @@ public class DenickRunnable implements Runnable {
 
         // Step 2: Extract Nonce (Main Thread)
         int foundNonce = -1;
-        List<ItemStack> items = new ArrayList<>();
-        Collections.addAll(items, target.inventory.armorInventory);
-        Collections.addAll(items, target.inventory.mainInventory);
 
-        for (ItemStack item : items) {
-            if (item != null && item.hasTagCompound()) {
-                NBTTagCompound extra = item.getTagCompound().getCompoundTag("ExtraAttributes");
-                if (extra.hasKey("Nonce")) {
-                    int nonce = extra.getInteger("Nonce");
-                    if (nonce > 0) {
-                        foundNonce = nonce;
-                        break;
-                    }
+        // 1. PRIORITY SCAN: Pants
+        ItemStack pants = target.inventory.armorInventory[1];
+        foundNonce = getNonce(pants);
+
+        // 2. PRIORITY SCAN: Held Item
+        if (foundNonce == -1) {
+            foundNonce = getNonce(target.getHeldItem());
+        }
+
+        // 3. EXHAUSTIVE SCAN: Entire Hotbar
+        if (foundNonce == -1) {
+            for (int i = 0; i < 9; i++) {
+                ItemStack item = target.inventory.mainInventory[i];
+                int nonce = getNonce(item);
+                if (nonce > 0) {
+                    foundNonce = nonce;
+                    break;
                 }
             }
         }
@@ -271,6 +276,17 @@ public class DenickRunnable implements Runnable {
         if (ConfigHandler.globalDebug) {
             addChatMessage(new ChatComponentText(EnumChatFormatting.YELLOW + "[DEBUG] " + msg));
         }
+    }
+
+    private int getNonce(ItemStack item) {
+        if (item != null && item.hasTagCompound()) {
+            NBTTagCompound extra = item.getTagCompound().getCompoundTag("ExtraAttributes");
+            if (extra != null && extra.hasKey("Nonce")) {
+                int nonce = extra.getInteger("Nonce");
+                if (nonce > 99) return nonce;
+            }
+        }
+        return -1;
     }
 
     private void addChatMessage(IChatComponent component) {

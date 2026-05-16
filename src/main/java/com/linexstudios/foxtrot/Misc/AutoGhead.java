@@ -19,7 +19,7 @@ public class AutoGhead {
     // GUI Toggles
     public static boolean enabled = true;
     
-    // --- ORGANIC RANDOMIZATION ---
+    // Randomization Variables
     // Instead of a static number, we generate a new random threshold every time we heal
     private double currentHealthThreshold = generateNewThreshold();
 
@@ -113,7 +113,7 @@ public class AutoGhead {
         if (healCooldown > 0) healCooldown--;
         
         if (state == State.IDLE) {
-            // Check against our dynamic humanized threshold!
+            // Check against dynamic threshold
             if (enabled && healCooldown <= 0 && mc.thePlayer.getHealth() <= currentHealthThreshold && mc.currentScreen == null) {
                 
                 gHeadSlot = -1;
@@ -153,7 +153,7 @@ public class AutoGhead {
 
         if (state != State.IDLE) {
             timeoutTimer++;
-            // Extended failsafe to 35 ticks to account for the new random humanized delays
+            // Extended failsafe to 35 ticks to account for random delays
             if (timeoutTimer > 35) {
                 forceReset();
                 return;
@@ -172,7 +172,7 @@ public class AutoGhead {
                         
                         state = State.EAT;
                         tickDelay = 0;
-                        targetDelay = getRandomDelay(2, 5); // Wait 2-5 ticks before clicking to look human
+                        targetDelay = getRandomDelay(2, 5); // Wait 2-5 ticks before clicking
                     }
                     break;
 
@@ -190,8 +190,8 @@ public class AutoGhead {
                         }
                         healCooldown = 20; // 1 second buffer before we can heal anything again
                         
-                        // --- ORGANIC RANDOMIZATION UPDATE ---
-                        // Roll the dice for the NEXT heal so we don't heal at the same HP twice in a row!
+                        // Randomization Update
+                        // Roll the dice for the NEXT heal
                         currentHealthThreshold = generateNewThreshold();
                         
                         state = State.SWAPBACK;

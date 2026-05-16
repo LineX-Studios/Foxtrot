@@ -41,9 +41,9 @@ public class ItemScraper {
         for (ItemStack item : items) {
             int nonce = getNonce(item);
             
-            // STRICT FILTER: Ignores Nonce 0, 1, 2, 3, 4, 5, 6, 7, 8, and 9 (Rage Pants)
+            // STRICT FILTER: Ignores nonces under 100 (e.g. 1-99) because they represent multiple players
             // Only accepts valid large-digit nonces (e.g., 680163832)
-            if (nonce > 9) { 
+            if (nonce > 99) { 
                 nonces.add(nonce);
             }
         }

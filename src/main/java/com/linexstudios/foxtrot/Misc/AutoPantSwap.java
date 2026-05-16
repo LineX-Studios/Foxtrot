@@ -43,7 +43,16 @@ public class AutoPantSwap {
     private static int venomTimeout = 0;
     private static int normalSwapTimeout = 0;
     
+    private static final java.util.Random rand = new java.util.Random();
+    private static int targetDelay1 = 0;
+    private static int targetDelay2 = 0;
+    private static int targetDelay3 = 0;
+
     private int oldInvSlot = -1;
+
+    private static int getRandomTickDelay(int min, int max) {
+        return rand.nextInt(max - min + 1) + min;
+    }
 
     public static boolean hasPodInInv(){
         for (int i = 0; i <= 35; i++) {
@@ -63,6 +72,24 @@ public class AutoPantSwap {
             }
         }
         return false;
+    }
+
+    /**
+     * Called instantly by PacketHandler when a Venom packet is received.
+     * This bypasses the 50ms (1 tick) delay of the standard tick-based check.
+     */
+    public void onVenomPacketReceived() {
+        if (!venomSwapEnabled || mc.currentScreen != null || mc.thePlayer == null || alreadyDidSwap) return;
+        
+        // Instant check for leather pants
+        ItemStack armor = mc.thePlayer.inventory.armorItemInSlot(1);
+        if (armor != null && armor.getItem() == Items.leather_leggings) {
+            if (hadDiamondPantsInInv()) {
+                alreadyDidSwap = true;
+                start(3);
+                System.out.println("[Foxtrot] INSTANT VENOM TRIGGER: Swapping to Diamond Pants.");
+            }
+        }
     }
 
     private void resetVenomState() {
@@ -118,7 +145,7 @@ public class AutoPantSwap {
             start(3);
         }
         
-        // TRIGGER LOGIC: If we get poisoned, and haven't swapped yet
+        // TRIGGER LOGIC: Fallback tick-based check (redundant but safe)
         if (isPoisoned && !alreadyDidSwap && player.inventory.armorItemInSlot(1) != null && player.inventory.armorItemInSlot(1).getItem() == Items.leather_leggings) {
             if (hadDiamondPantsInInv()) {
                 alreadyDidSwap = true;
@@ -132,18 +159,21 @@ public class AutoPantSwap {
             case 1:
                 if (state != State.IDLE) return;
                 tickDelay = 0;
+                targetDelay1 = getRandomTickDelay(1, 2); // Random 1-2 tick open delay
                 normalSwapTimeout = 0;
                 state = State.OPEN_INV;
                 break;
             case 2:
                 if (stateAutoPod != StateAutoPod.IDLE) return;
                 tickDelay2 = 0;
+                targetDelay2 = getRandomTickDelay(1, 2);
                 podTimeout = 0;
                 stateAutoPod = StateAutoPod.OPEN_INV;
                 break;
             case 3:
                 if (stateSwapIfVenomed != StateSwapIfVenomed.IDLE) return;
                 tickDelay3 = 0;
+                targetDelay3 = getRandomTickDelay(1, 2);
                 venomTimeout = 0;
                 stateSwapIfVenomed = StateSwapIfVenomed.OPEN_INV;
                 break;
@@ -168,7 +198,7 @@ public class AutoPantSwap {
 
             switch (stateSwapIfVenomed){
                 case OPEN_INV:
-                    if (tickDelay3 >= 1){
+                    if (tickDelay3 >= targetDelay3){
                         mc.thePlayer.sendQueue.addToSendQueue(new C16PacketClientStatus(C16PacketClientStatus.EnumState.OPEN_INVENTORY_ACHIEVEMENT));
                         mc.displayGuiScreen(new GuiInventory(mc.thePlayer));
                         if (alreadyDidSwap && mc.thePlayer.getActivePotionEffect(Potion.poison)==null) {
@@ -177,10 +207,11 @@ public class AutoPantSwap {
                             stateSwapIfVenomed = StateSwapIfVenomed.SWAP1;
                         }
                         tickDelay3 = 0;
+                        targetDelay3 = getRandomTickDelay(2, 4); // Random 2-4 tick swap delay
                     }
                     break;
                 case SWAP1:
-                    if (tickDelay3 >= 3) {
+                    if (tickDelay3 >= targetDelay3) {
                         if (mc.currentScreen instanceof GuiInventory) {
                             int diamPantsSlot = -1;
                             for (int i = 0; i <= 35; i++) {
@@ -192,59 +223,66 @@ public class AutoPantSwap {
                             }
                             if (diamPantsSlot == -1){
                                 stateSwapIfVenomed = StateSwapIfVenomed.CLOSE_INV;
+                                targetDelay3 = getRandomTickDelay(1, 2);
                                 break;
                             }
                             if (diamPantsSlot <= 8) { // Hotbar
                                 mc.playerController.windowClick(0, 7, diamPantsSlot, 2, mc.thePlayer);
                                 oldInvSlot = diamPantsSlot;
                                 tickDelay3 = 0;
+                                targetDelay3 = getRandomTickDelay(2, 3);
                                 stateSwapIfVenomed = StateSwapIfVenomed.CLOSE_INV;
                                 break;
                             }
                             mc.playerController.windowClick(0, diamPantsSlot, 5, 2, mc.thePlayer);
                             oldInvSlot = diamPantsSlot;
                             tickDelay3 = 0;
+                            targetDelay3 = getRandomTickDelay(2, 4);
                             stateSwapIfVenomed = StateSwapIfVenomed.SWAP2;
                         } else resetVenomState();
                     }
                     break;
                 case SWAP2:
-                    if (tickDelay3 >= 3) {
+                    if (tickDelay3 >= targetDelay3) {
                         if (mc.currentScreen instanceof GuiInventory) {
                             mc.playerController.windowClick(0, 7, 5, 2, mc.thePlayer);
                             tickDelay3 = 0;
+                            targetDelay3 = getRandomTickDelay(2, 3);
                             stateSwapIfVenomed = StateSwapIfVenomed.CLOSE_INV;
                         } else resetVenomState();
                     }
                     break;
                 case SWAP3: // Swapping Back
-                    if (tickDelay3 >= 3) {
+                    if (tickDelay3 >= targetDelay3) {
                         if (mc.currentScreen instanceof GuiInventory) {
                             if (oldInvSlot <= 8) {
                                 mc.playerController.windowClick(0, 7, oldInvSlot, 2, mc.thePlayer);
                                 stateSwapIfVenomed = StateSwapIfVenomed.CLOSE_INV;
                                 alreadyDidSwap = false;
                                 tickDelay3 = 0;
+                                targetDelay3 = getRandomTickDelay(1, 2);
                                 break;
                             }
                             mc.playerController.windowClick(0, 7, 5, 2, mc.thePlayer);
                             stateSwapIfVenomed = StateSwapIfVenomed.SWAP4;
                             tickDelay3 = 0;
+                            targetDelay3 = getRandomTickDelay(2, 4);
                         } else resetVenomState();
                     }
                     break;
                 case SWAP4:
-                    if (tickDelay3 >= 3) {
+                    if (tickDelay3 >= targetDelay3) {
                         if (mc.currentScreen instanceof GuiInventory) {
                             mc.playerController.windowClick(0, oldInvSlot, 5, 2, mc.thePlayer);
                             stateSwapIfVenomed = StateSwapIfVenomed.CLOSE_INV;
                             alreadyDidSwap = false;
                             tickDelay3 = 0;
+                            targetDelay3 = getRandomTickDelay(1, 2);
                         } else resetVenomState();
                     }
                     break;
                 case CLOSE_INV:
-                    if (tickDelay3 >= 2) {
+                    if (tickDelay3 >= targetDelay3) {
                         resetVenomState();
                     }
                     break;
@@ -263,24 +301,26 @@ public class AutoPantSwap {
 
             switch (state) {
                 case OPEN_INV:
-                    if (tickDelay >= 1) {
+                    if (tickDelay >= targetDelay1) {
                         mc.thePlayer.sendQueue.addToSendQueue(new C16PacketClientStatus(C16PacketClientStatus.EnumState.OPEN_INVENTORY_ACHIEVEMENT));
                         mc.displayGuiScreen(new GuiInventory(mc.thePlayer));
                         state = State.SWAP;
                         tickDelay = 0;
+                        targetDelay1 = getRandomTickDelay(2, 4);
                     }
                     break;
                 case SWAP:
-                    if (tickDelay >= 3) {
+                    if (tickDelay >= targetDelay1) {
                         if (mc.currentScreen instanceof GuiInventory) {
                             mc.playerController.windowClick(0, 7, mc.thePlayer.inventory.currentItem, 2, mc.thePlayer);
                             tickDelay = 0;
+                            targetDelay1 = getRandomTickDelay(1, 2);
                             state = State.CLOSE_INV;
                         } else resetNormalSwap();
                     }
                     break;
                 case CLOSE_INV:
-                    if (tickDelay >= 2) {
+                    if (tickDelay >= targetDelay1) {
                         resetNormalSwap();
                     }
                     break;

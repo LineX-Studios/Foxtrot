@@ -45,7 +45,7 @@ public class AutoDenick {
         if (!enabled || mc.theWorld == null || mc.getNetHandler() == null || event.phase != TickEvent.Phase.END) return;
 
         tickTimer++;
-        if (tickTimer >= 10) { // Runs every 0.5 seconds
+        if (tickTimer >= 2) { // Runs every 0.1 seconds (fast scanning)
             tickTimer = 0;
             detectIfPlayerIsNicked();
         }
@@ -75,7 +75,7 @@ public class AutoDenick {
                 if (needsDenick) {
                     if (resolvingNicks.contains(nick)) {
                         long lastAttempt = retryCooldowns.getOrDefault(nick, 0L);
-                        if (System.currentTimeMillis() - lastAttempt > 15000) {
+                        if (System.currentTimeMillis() - lastAttempt > 10000) { // Reduced cooldown for active resolution
                              resolvingNicks.remove(nick); 
                         } else {
                              continue;
@@ -83,45 +83,36 @@ public class AutoDenick {
                     }
 
                     long lastAttempt = retryCooldowns.getOrDefault(nick, 0L);
-                    if (System.currentTimeMillis() - lastAttempt >= 5000) { // Retry every 5 seconds if scraping fails or no nonce
+                    if (System.currentTimeMillis() - lastAttempt >= 1000) { // Faster retry (2s instead of 5s)
                         try {
                             int foundNonce = -1;
-                            List<ItemStack> itemsToCheck = new ArrayList<>();
                             
-                            // Client only knows about other players' armor and held item. mainInventory is empty for others.
-                            Collections.addAll(itemsToCheck, p.inventory.armorInventory);
-                            if (p.getCurrentEquippedItem() != null) {
-                                itemsToCheck.add(p.getCurrentEquippedItem());
+                            // 1. PRIORITY SCAN: Pants (Leggings slot is index 1 in armor)
+                            ItemStack pants = p.inventory.armorInventory[1];
+                            foundNonce = getNonce(pants);
+                            
+                            // 2. PRIORITY SCAN: Held Item (Likely Sword or Bow)
+                            if (foundNonce == -1) {
+                                foundNonce = getNonce(p.getHeldItem());
                             }
-
-                            boolean hasMystic = false;
-                            for (ItemStack item : itemsToCheck) {
-                                if (item != null && item.hasTagCompound()) {
-                                    NBTTagCompound extra = item.getTagCompound().getCompoundTag("ExtraAttributes");
-                                    if (extra != null && (extra.hasKey("Nonce") || extra.hasKey("CustomEnchants"))) {
-                                        hasMystic = true;
+                            
+                            // 3. EXHAUSTIVE SCAN: Entire Hotbar
+                            if (foundNonce == -1) {
+                                for (int i = 0; i < 9; i++) {
+                                    ItemStack item = p.inventory.mainInventory[i];
+                                    int nonce = getNonce(item);
+                                    if (nonce > 0) {
+                                        foundNonce = nonce;
                                         break;
                                     }
                                 }
                             }
 
-                            if (!hasMystic) continue; // Skip players without mystic gear
-
-                            for (ItemStack item : itemsToCheck) {
-                                if (item != null && item.hasTagCompound()) {
-                                    NBTTagCompound extra = item.getTagCompound().getCompoundTag("ExtraAttributes");
-                                    if (extra != null && extra.hasKey("Nonce")) {
-                                        int nonce = extra.getInteger("Nonce");
-                                        if (nonce > 0) {
-                                            foundNonce = nonce;
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-                            
                             if (foundNonce == -1) {
-                                NickedManager.updateNicked(nick, EnumChatFormatting.RED + "No Nonce");
+                                // If we already know they are nicked but no nonce found yet, don't spam No Nonce if they just haven't held a mystic yet
+                                if (currentStatus == null) {
+                                    NickedManager.updateNicked(nick, EnumChatFormatting.RED + "No Nonce");
+                                }
                                 retryCooldowns.put(nick, System.currentTimeMillis());
                                 continue; 
                             }
@@ -140,7 +131,7 @@ public class AutoDenick {
                             
                             final int finalNonce = foundNonce;
                             final long millisStarted = System.currentTimeMillis();
-                            sendDebug("Found Valid Nonce (" + finalNonce + "). Resolving...");
+                            sendDebug("Found Valid Nonce (" + finalNonce + ") for " + nick + ". Resolving...");
                             
                             new Thread(() -> {
                                 try {
@@ -170,7 +161,7 @@ public class AutoDenick {
                             }).start();
                             
                         } catch (Exception e) {
-                            sendDebug("Internal error while scanning inventory: " + e.getMessage());
+                            sendDebug("Internal error while scanning: " + e.getMessage());
                             retryCooldowns.put(nick, System.currentTimeMillis());
                         }
                     }
@@ -314,6 +305,17 @@ public class AutoDenick {
         style.setChatHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ChatComponentText(EnumChatFormatting.GRAY + "Open: " + url)));
         msg.setChatStyle(style);
         sendRawChatMessage(msg);
+    }
+
+    private static int getNonce(ItemStack item) {
+        if (item != null && item.hasTagCompound()) {
+            NBTTagCompound extra = item.getTagCompound().getCompoundTag("ExtraAttributes");
+            if (extra != null && extra.hasKey("Nonce")) {
+                int nonce = extra.getInteger("Nonce");
+                if (nonce > 0) return nonce;
+            }
+        }
+        return -1;
     }
 
     private static void sendChatMsg(String msg) {

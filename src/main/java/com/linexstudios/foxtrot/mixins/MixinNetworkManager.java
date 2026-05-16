@@ -15,7 +15,7 @@ public class MixinNetworkManager {
 
     @Inject(method = "sendPacket(Lnet/minecraft/network/Packet;)V", at = @At("HEAD"), cancellable = true)
     private void onSendPacket(net.minecraft.network.Packet<?> packet, CallbackInfo ci) {
-        // --- STEALTH BRAND SPOOFING ---
+        // Client Brand Obfuscation
         if (packet instanceof net.minecraft.network.play.client.C17PacketCustomPayload) {
             net.minecraft.network.play.client.C17PacketCustomPayload p = (net.minecraft.network.play.client.C17PacketCustomPayload) packet;
             if ("MC|Brand".equals(p.getChannelName())) {
