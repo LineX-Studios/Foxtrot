@@ -12,20 +12,38 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class WhoGotBanned {
     public static final WhoGotBanned instance = new WhoGotBanned();
     private final Minecraft mc = Minecraft.getMinecraft();
 
-    // Keeps track of the lobby from the previous tick
-    private final Set<String> previousPlayers = new HashSet<>();
+    // All collections are thread-safe to prevent ConcurrentModificationException
 
-    // Memory bank of people who left in the last 5 seconds (Name -> Timestamp)
-    private final Map<String, Long> recentlyLeft = new HashMap<>();
+    // Snapshot of the tab list from the previous detection window
+    public final Set<String> previousPlayers = ConcurrentHashMap.newKeySet();
+
+    // Players who vanished from tab in the current detection window (Name ->
+    // Timestamp)
+    // Cleared after every ban chat event is processed
+    private final Map<String, Long> candidates = new ConcurrentHashMap<>();
+
+    // Long-term cache: prevents reporting the same player twice in one session
+    public final Set<String> alreadyReported = ConcurrentHashMap.newKeySet();
+
+    // Lobby-join grace period: detection is disabled for 10 seconds after joining
+    public long lobbyJoinTime = 0;
+    private static final long GRACE_PERIOD_MS = 10_000; // 10 seconds
+
+    // Detection tuning constants
+    // How long a candidate stays valid after they left the tab list
+    private static final long CANDIDATE_TTL_MS = 15_000;
+    // Mass-leave threshold — if more than this many left at once, it's a reshuffle
+    // not a ban
+    private static final int MASS_LEAVE_THRESHOLD = 3;
 
     private static final String PROXY_API_URL = "https://foxtrot-api.vercel.app/ban";
 
@@ -34,95 +52,175 @@ public class WhoGotBanned {
         if (event.phase != TickEvent.Phase.END || mc.theWorld == null || mc.getNetHandler() == null)
             return;
 
-        Set<String> currentPlayers = new HashSet<>();
+        // Skip all detection during the grace period after joining a lobby
+        if (System.currentTimeMillis() - lobbyJoinTime < GRACE_PERIOD_MS) {
+            return;
+        }
 
-        // Grab everyone currently in the Tab List
+        // Build a fresh snapshot of the current tab list
+        Set<String> currentPlayers = new HashSet<>();
         for (NetworkPlayerInfo info : mc.getNetHandler().getPlayerInfoMap()) {
             if (info != null && info.getGameProfile() != null && info.getGameProfile().getName() != null) {
                 String name = info.getGameProfile().getName();
-                // Filter out NPCs/Holograms (they usually start with color codes in the tab
-                // logic)
-                if (!name.startsWith("§")) {
+                // Filter out NPCs/holograms (they start with color codes)
+                if (!name.startsWith("\u00a7")) {
                     currentPlayers.add(name);
                 }
             }
         }
 
-        // If previousPlayers is empty, it means we just joined the lobby. Just sync and
-        // return to avoid false positives.
+        // Seed the previous list on first tick after grace period ends
         if (previousPlayers.isEmpty()) {
             previousPlayers.addAll(currentPlayers);
             return;
         }
 
-        // Compare: Who was here a tick ago, but is gone now?
-        for (String prev : previousPlayers) {
-            if (!currentPlayers.contains(prev)) {
-                // They vanished! Log their name and the exact millisecond they disappeared.
-                recentlyLeft.put(prev, System.currentTimeMillis());
-            }
+        // Find who was in the previous snapshot but is gone now
+        Set<String> leftThisTick = new HashSet<>(previousPlayers);
+        leftThisTick.removeAll(currentPlayers);
+
+        // Mass-leave spam guard: if too many people left at once it's a reshuffle, not
+        // a ban.
+        if (leftThisTick.size() > MASS_LEAVE_THRESHOLD) {
+            previousPlayers.clear();
+            previousPlayers.addAll(currentPlayers);
+            // Don't add anyone to candidates — this was a mass leave event
+            return;
         }
 
-        // Update the previous list for the next tick calculation
+        // Record each leaver as a candidate with the exact millisecond they
+        // disappeared.
+        // Timestamp here and correlate with the ban chat message in onChat.
+        long now = System.currentTimeMillis();
+        for (String left : leftThisTick) {
+            candidates.put(left, now);
+        }
+
+        // Update previous snapshot for next tick
         previousPlayers.clear();
         previousPlayers.addAll(currentPlayers);
 
-        // Cleanup: Delete anyone from the memory bank who left more than 15 seconds ago
-        // (expanded for lag safety)
-        long now = System.currentTimeMillis();
-        recentlyLeft.entrySet().removeIf(entry -> now - entry.getValue() > 15000);
+        // Evict stale candidates that are older than the TTL window
+        candidates.entrySet().removeIf(entry -> now - entry.getValue() > CANDIDATE_TTL_MS);
     }
 
     @SubscribeEvent
     public void onChat(ClientChatReceivedEvent event) {
         if (event.type == 2)
-            return; // Ignore action bar messages (like health or mana)
+            return; // Ignore action bar messages
 
-        // Strip the formatting so we can read the raw text easily
         String unformatted = EnumChatFormatting.getTextWithoutFormattingCodes(event.message.getUnformattedText());
 
-        // Check for Hypixel's exact Watchdog ban messages
-        if (unformatted.contains("A player has been removed from your game") ||
-                unformatted.contains("A player has been removed from your lobby")) {
+        // Hypixel's exact Watchdog ban messages
+        if (!unformatted.contains("A player has been removed from your game") &&
+                !unformatted.contains("A player has been removed from your lobby")) {
+            return;
+        }
 
-            // The ban message just hit! Let's find the person who vanished closest to this
-            // exact millisecond.
-            String bannedPlayer = "Unknown (Too Fast)";
-            long closestTime = Long.MAX_VALUE;
+        runBanDetection();
+    }
 
-            for (Map.Entry<String, Long> entry : recentlyLeft.entrySet()) {
-                long timeDiff = System.currentTimeMillis() - entry.getValue();
+    /**
+     * Core ban detection logic — shared between the real chat event and the dev test trigger.
+     */
+    public void runBanDetection() {
+        // --- BAN MESSAGE DETECTED ---
+        // Build the list of valid candidates (not already reported, within TTL)
+        long now = System.currentTimeMillis();
+        Set<String> validCandidates = new HashSet<>();
 
-                if (timeDiff < closestTime) {
-                    closestTime = timeDiff;
-                    bannedPlayer = entry.getKey();
-                }
+        for (Map.Entry<String, Long> entry : candidates.entrySet()) {
+            String name = entry.getKey();
+
+            // Skip anyone already reported this session (deduplication cache)
+            if (alreadyReported.contains(name))
+                continue;
+
+            // Only include candidates who left recently enough to be plausible
+            if (now - entry.getValue() <= CANDIDATE_TTL_MS) {
+                validCandidates.add(name);
             }
+        }
 
-            // --- TRIGGER THE CHAT ALERT ---
+        // Secondary spam guard: abort if too many candidates remain after the ban message
+        if (validCandidates.size() > MASS_LEAVE_THRESHOLD) {
+            candidates.clear();
             if (mc.thePlayer != null) {
+                mc.thePlayer.addChatMessage(new ChatComponentText(
+                        EnumChatFormatting.GRAY + "[" + EnumChatFormatting.RED + "Foxtrot" +
+                                EnumChatFormatting.GRAY + "] " +
+                                EnumChatFormatting.DARK_GRAY
+                                + "Ban detected but too many bans — skipping to avoid spam."));
+            }
+            return;
+        }
+
+        if (validCandidates.isEmpty()) {
+            // No valid candidate found
+            if (mc.thePlayer != null) {
+                mc.thePlayer.addChatMessage(new ChatComponentText(
+                        EnumChatFormatting.GRAY + "[" + EnumChatFormatting.RED + "Foxtrot" +
+                                EnumChatFormatting.GRAY + "] " +
+                                EnumChatFormatting.DARK_GRAY + "Could not find banned player name."));
+            }
+            return;
+        }
+
+        // Color communicates confidence — no extra label text:
+        // Exactly 1 candidate = HIGH confidence → RED
+        // Multiple candidates = MEDIUM confidence → YELLOW
+        boolean isHighConfidence = (validCandidates.size() == 1);
+
+        for (String bannedPlayer : validCandidates) {
+            // Mark as reported so we never double-report
+            alreadyReported.add(bannedPlayer);
+            candidates.remove(bannedPlayer);
+
+            // Display in chat — color tells the story, no confidence label shown
+            if (mc.thePlayer != null) {
+                // RED = confirmed, YELLOW = uncertain
+                EnumChatFormatting nameColor = isHighConfidence
+                        ? EnumChatFormatting.RED
+                        : EnumChatFormatting.YELLOW;
+
                 mc.thePlayer.addChatMessage(new ChatComponentText(
                         EnumChatFormatting.GRAY + "[" +
                                 EnumChatFormatting.RED + "Foxtrot" +
                                 EnumChatFormatting.GRAY + "] " +
-                                EnumChatFormatting.YELLOW + "\u26A0 " + // warning symbol
-                                EnumChatFormatting.RED + "" + EnumChatFormatting.BOLD + bannedPlayer + " " +
-                                EnumChatFormatting.GOLD + "Has been banned!"));
+                                nameColor + "\u26A0 " +
+                                EnumChatFormatting.BOLD + bannedPlayer +
+                                EnumChatFormatting.RESET + nameColor + " has been banned!"));
             }
 
-            if (!bannedPlayer.equals("Unknown (Too Fast)")) {
-                sendBanToDiscord(bannedPlayer);
-
-                // FIX: Only remove the player we just banned!
-                // Do NOT clear the whole map. If 3 people are banned at the same millisecond,
-                // the next 2 chat messages will correctly match the remaining 2 players in the
-                // map!
-                recentlyLeft.remove(bannedPlayer);
-            }
+            // Send to API with confidence flag
+            sendBanToDiscord(bannedPlayer, isHighConfidence);
         }
     }
 
-    private void sendBanToDiscord(String username) {
+    /**
+     * Dev-only: directly triggers the ban detection logic as if Hypixel sent
+     * "A player has been removed from your lobby" in chat.
+     * Called from DevCommandHandler — never reachable in production.
+     */
+    public void simulateBanMessage() {
+        runBanDetection();
+    }
+
+    /**
+     * Resets all detection state when the player joins a new world/lobby.
+     * Called from WorldLoadListener.
+     */
+    public void onLobbyJoin() {
+        previousPlayers.clear();
+        candidates.clear();
+
+        alreadyReported.clear();
+        lobbyJoinTime = System.currentTimeMillis(); // Start the 10-second grace period
+    }
+
+    // Sends { "usernames": ["Name"], "confident": true/false } to the Foxtrot ban
+    // API
+    private void sendBanToDiscord(String username, boolean isHighConfidence) {
         if (username == null || username.isEmpty())
             return;
 
@@ -134,25 +232,28 @@ public class WhoGotBanned {
                 conn.setRequestMethod("POST");
                 conn.setRequestProperty("Content-Type", "application/json; utf-8");
                 conn.setRequestProperty("Accept", "application/json");
-                conn.setRequestProperty("Content-Type", "application/json");
                 conn.setDoOutput(true);
+                conn.setConnectTimeout(5000);
+                conn.setReadTimeout(5000);
 
-                String jsonInputString = "{\"username\": \"" + username + "\"}";
+                // Array-based payload with confidence flag
+                String jsonPayload = "{\"usernames\": [\"" + username + "\"], \"confident\": " + isHighConfidence + "}";
 
                 try (OutputStream os = conn.getOutputStream()) {
-                    byte[] input = jsonInputString.getBytes(StandardCharsets.UTF_8);
+                    byte[] input = jsonPayload.getBytes(StandardCharsets.UTF_8);
                     os.write(input, 0, input.length);
                 }
 
                 int responseCode = conn.getResponseCode();
                 if (responseCode != 200) {
-                    System.out.println("[Foxtrot] API rejected the ban payload. Code: " + responseCode);
+                    System.out.println("[Foxtrot] API rejected ban payload. Code: " + responseCode);
                 } else {
-                    System.out.println("[Foxtrot] Successfully sent ban alert to Discord for: " + username);
+                    System.out.println(
+                            "[Foxtrot] Ban alert sent for: " + username + " (confident=" + isHighConfidence + ")");
                 }
 
             } catch (Exception e) {
-                System.out.println("[Foxtrot] Failed to connect to API: " + e.getMessage());
+                System.out.println("[Foxtrot] Failed to send ban alert: " + e.getMessage());
             }
         }).start();
     }
