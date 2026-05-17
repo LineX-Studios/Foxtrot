@@ -104,3 +104,6 @@ Foxtrot features a comprehensive command system. You can use `/foxtrot` or the s
 * `/fx ringhelper` - Draws a 11x11 ring around mid to help you ring mid faster.
 * `/fx deadlobby` - Helps you find dead lobbies in pit.
 ---
+
+**TO COMPILE:**
+go to git bash and use the command `./gradlew shadowjar`
