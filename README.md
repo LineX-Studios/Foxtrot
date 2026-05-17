@@ -115,7 +115,7 @@ THEN TO COMPILE THE MOD YOU NEED TO GO TO YOUR FILE DIRECTORY RIGHT CLICK AND OP
 AND THEN TYPE THIS COMMAND
 
 ```
-./gradlew build
+./gradlew shadowjar
 ```
 If you are using an IDE (like InteliJ or Eclipse...) make sure project sdk is java 8 Also make sure gradle jvm is using java 17.
 
