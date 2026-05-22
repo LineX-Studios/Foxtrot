@@ -8,7 +8,7 @@
 [![Discord](https://img.shields.io/badge/Discord-7289DA?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/3mDn6vcTuK)
 
 
-# END OF LIFE - NO MORE UPDATES / MOD SUPPORT
+# END OF LIFE - NO MORE UPDATES / MOD SUPPORT AFTER VERSION 1.0.3
 
 Foxtrot is a highly optimized, open-source utility mod  exclusively for 1.8.9 Forge. Built or Hypixel Pit, it adds quality-of-life features, including, automated ban tracking, Enemy List, Friends List, Darks List and more.
 
