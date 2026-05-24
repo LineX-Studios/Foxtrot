@@ -71,10 +71,10 @@ public class NameTags {
         }
 
         boolean isFoxtrot = com.linexstudios.foxtrot.Handler.FoxtrotUsersManager.isFoxtrotUser(player.getUniqueID());
-        int logoSpace = isFoxtrot ? 11 : 0;
-        int stringWidth = mc.fontRendererObj.getStringWidth(name);
-        int totalWidth = stringWidth + logoSpace;
-        int halfWidth = totalWidth / 2;
+        double logoSpace = isFoxtrot ? 11.0D : 0.0D;
+        double stringWidth = mc.fontRendererObj.getStringWidth(name);
+        double totalWidth = stringWidth + logoSpace;
+        double halfWidth = totalWidth / 2.0D;
 
         String swordEnchants = EnchantNames.getEnchantsString(player.getHeldItem());
         String pantsEnchants = EnchantNames.getEnchantsString(player.getCurrentArmor(1)); 
@@ -82,8 +82,8 @@ public class NameTags {
         boolean hasSword = swordEnchants != null && !swordEnchants.isEmpty();
         boolean hasPants = pantsEnchants != null && !pantsEnchants.isEmpty();
         
-        int swordWidth = hasSword ? mc.fontRendererObj.getStringWidth(swordEnchants) / 2 : 0;
-        int pantsWidth = hasPants ? mc.fontRendererObj.getStringWidth(pantsEnchants) / 2 : 0;
+        double swordWidth = hasSword ? mc.fontRendererObj.getStringWidth(swordEnchants) / 2.0D : 0.0D;
+        double pantsWidth = hasPants ? mc.fontRendererObj.getStringWidth(pantsEnchants) / 2.0D : 0.0D;
 
         GL11.glDisable(GL11.GL_TEXTURE_2D);
         GlStateManager.disableTexture2D();
@@ -92,15 +92,15 @@ public class NameTags {
         WorldRenderer worldrenderer = tessellator.getWorldRenderer();
         worldrenderer.begin(7, DefaultVertexFormats.POSITION_COLOR);
         
-        drawRect(worldrenderer, -halfWidth - 2, -2, halfWidth + 2, 11);
+        drawRect(worldrenderer, -halfWidth - 2.0D, -2.0D, halfWidth + 2.0D, 11.0D);
 
-        int currentYOffset = -14;
+        double currentYOffset = -14.0D;
         if (hasSword) {
-            drawRect(worldrenderer, -swordWidth - 2, currentYOffset, swordWidth + 2, currentYOffset + 13);
-            currentYOffset -= 12;
+            drawRect(worldrenderer, -swordWidth - 2.0D, currentYOffset, swordWidth + 2.0D, currentYOffset + 13.0D);
+            currentYOffset -= 12.0D;
         }
         if (hasPants) {
-            drawRect(worldrenderer, -pantsWidth - 2, currentYOffset, pantsWidth + 2, currentYOffset + 13);
+            drawRect(worldrenderer, -pantsWidth - 2.0D, currentYOffset, pantsWidth + 2.0D, currentYOffset + 13.0D);
         }
 
         tessellator.draw();
@@ -110,22 +110,22 @@ public class NameTags {
         GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F); 
         
-        int textX = -halfWidth + logoSpace;
-        mc.fontRendererObj.drawStringWithShadow(name, textX, 0, -1);
+        double textX = -halfWidth + logoSpace;
+        mc.fontRendererObj.drawStringWithShadow(name, (float)textX, 0.0F, -1);
         
         if (isFoxtrot) {
             GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
             mc.getTextureManager().bindTexture(new net.minecraft.util.ResourceLocation("foxtrot", "icons/fx_logo.png"));
-            net.minecraft.client.gui.Gui.drawModalRectWithCustomSizedTexture(-halfWidth, 0, 0, 0, 9, 9, 9, 9);
+            drawModalRectWithCustomSizedTexture(-halfWidth, 0.0D, 0.0F, 0.0F, 9.0D, 9.0D, 9.0D, 9.0D);
         }
         
-        currentYOffset = -12;
+        currentYOffset = -12.0D;
         if (hasSword) {
-            mc.fontRendererObj.drawStringWithShadow(swordEnchants, -swordWidth, currentYOffset, -1);
-            currentYOffset -= 12;
+            mc.fontRendererObj.drawStringWithShadow(swordEnchants, (float)-swordWidth, (float)currentYOffset, -1);
+            currentYOffset -= 12.0D;
         }
         if (hasPants) {
-            mc.fontRendererObj.drawStringWithShadow(pantsEnchants, -pantsWidth, currentYOffset, -1);
+            mc.fontRendererObj.drawStringWithShadow(pantsEnchants, (float)-pantsWidth, (float)currentYOffset, -1);
         }
 
         // RENDER ITEMS (Armor Layout Restored + Glint Sandboxed)
@@ -196,11 +196,24 @@ public class NameTags {
         GlStateManager.popMatrix();
     }
 
-    private void drawRect(WorldRenderer renderer, int minX, int minY, int maxX, int maxY) {
+    private void drawRect(WorldRenderer renderer, double minX, double minY, double maxX, double maxY) {
         renderer.pos(minX, minY, 0.0D).color(0.0F, 0.0F, 0.0F, 0.5F).endVertex();
         renderer.pos(minX, maxY, 0.0D).color(0.0F, 0.0F, 0.0F, 0.5F).endVertex();
         renderer.pos(maxX, maxY, 0.0D).color(0.0F, 0.0F, 0.0F, 0.5F).endVertex();
         renderer.pos(maxX, minY, 0.0D).color(0.0F, 0.0F, 0.0F, 0.5F).endVertex();
+    }
+
+    private void drawModalRectWithCustomSizedTexture(double x, double y, float u, float v, double width, double height, double textureWidth, double textureHeight) {
+        double f = 1.0D / textureWidth;
+        double f1 = 1.0D / textureHeight;
+        Tessellator tessellator = Tessellator.getInstance();
+        WorldRenderer worldrenderer = tessellator.getWorldRenderer();
+        worldrenderer.begin(7, DefaultVertexFormats.POSITION_TEX);
+        worldrenderer.pos(x, y + height, 0.0D).tex(u * f, (v + height) * f1).endVertex();
+        worldrenderer.pos(x + width, y + height, 0.0D).tex((u + width) * f, (v + height) * f1).endVertex();
+        worldrenderer.pos(x + width, y, 0.0D).tex((u + width) * f, v * f1).endVertex();
+        worldrenderer.pos(x, y, 0.0D).tex(u * f, v * f1).endVertex();
+        tessellator.draw();
     }
 
     @SubscribeEvent

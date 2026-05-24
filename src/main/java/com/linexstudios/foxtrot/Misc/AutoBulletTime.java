@@ -72,7 +72,7 @@ public class AutoBulletTime {
                         didSwap = true;
                         waitingToSwapBack = false;
                         swapTime = System.currentTimeMillis();
-                        randomizedDelay = 100 + random.nextInt(151); // 100ms - 250ms random human delay
+                        randomizedDelay = 100 + random.nextInt(151); // 100ms - 250ms random delay
                         break;
                     }
                 }
@@ -90,7 +90,7 @@ public class AutoBulletTime {
     public void onTick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END || mc.thePlayer == null) return;
 
-        // Ensure we wait for the humanized delay before snapping back to the old sword
+        // Ensure we wait for the delay before snapping back to the old sword
         if (didSwap && waitingToSwapBack && oldSlot != -1) {
             long elapsed = System.currentTimeMillis() - swapTime;
             if (elapsed >= randomizedDelay) {

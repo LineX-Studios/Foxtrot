@@ -19,7 +19,8 @@
     "MixinGuiPlayerTabOverlay",
     "MixinRendererLivingEntity",
     "MixinNetworkPlayerInfo",
-    "MixinLayerCape"
+    "MixinLayerCape",
+    "MixinOldServerPinger"
   ],
   "client": [
   ],

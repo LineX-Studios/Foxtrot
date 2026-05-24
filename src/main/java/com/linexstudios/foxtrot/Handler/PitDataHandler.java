@@ -15,6 +15,8 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
 
+import java.nio.charset.StandardCharsets;
+
 public class PitDataHandler {
 
     private static JsonObject data;
@@ -31,9 +33,9 @@ public class PitDataHandler {
         
         // 1. TRY TO LOAD FROM CONFIG FOLDER
         if (configFile.exists()) {
-            try (FileReader reader = new FileReader(configFile)) {
+            try (InputStreamReader reader = new InputStreamReader(new java.io.FileInputStream(configFile), StandardCharsets.UTF_8)) {
                 data = new JsonParser().parse(reader).getAsJsonObject();
-                System.out.println("[Foxtrot] Loaded pitMaster.json from config.");
+                System.out.println("[Foxtrot] Loaded pitMaster.json from config (UTF-8).");
             } catch (Exception e) {
                 System.err.println("[Foxtrot] Failed to read pitMaster.json from config, trying resources...");
             }
@@ -43,9 +45,9 @@ public class PitDataHandler {
         if (data == null) {
             try (InputStream is = PitDataHandler.class.getResourceAsStream("/pitMaster.json")) {
                 if (is != null) {
-                    try (InputStreamReader isr = new InputStreamReader(is)) {
+                    try (InputStreamReader isr = new InputStreamReader(is, StandardCharsets.UTF_8)) {
                         data = new JsonParser().parse(isr).getAsJsonObject();
-                        System.out.println("[Foxtrot] Loaded pitMaster.json from internal resources.");
+                        System.out.println("[Foxtrot] Loaded pitMaster.json from internal resources (UTF-8).");
                         
                         // Extract it so the user can see/edit it
                         Files.copy(PitDataHandler.class.getResourceAsStream("/pitMaster.json"), configFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
@@ -55,9 +57,9 @@ public class PitDataHandler {
                     // Final fallback: Check development path
                     File devFile = new File("w:/FOXTROT-ALL BRANCH/pitMaster.json");
                     if (devFile.exists()) {
-                        try (FileReader fr = new FileReader(devFile)) {
+                        try (InputStreamReader fr = new InputStreamReader(new java.io.FileInputStream(devFile), StandardCharsets.UTF_8)) {
                             data = new JsonParser().parse(fr).getAsJsonObject();
-                            System.out.println("[Foxtrot] Loaded pitMaster.json from dev path.");
+                            System.out.println("[Foxtrot] Loaded pitMaster.json from dev path (UTF-8).");
                         }
                     }
                 }
@@ -91,7 +93,16 @@ public class PitDataHandler {
         Map<String, MysticData> map = new Gson().fromJson(data.getAsJsonObject("Pit").get("Mystics"), new TypeToken<Map<String, MysticData>>(){}.getType());
         MYSTICS.clear();
         for (Map.Entry<String, MysticData> entry : map.entrySet()) {
-            MYSTICS.put(entry.getKey().toLowerCase(), entry.getValue());
+            MysticData md = entry.getValue();
+            md.Name = sanitize(md.Name);
+            if (md.Descriptions != null) {
+                for (List<String> tier : md.Descriptions) {
+                    for (int i = 0; i < tier.size(); i++) {
+                        tier.set(i, sanitize(tier.get(i)));
+                    }
+                }
+            }
+            MYSTICS.put(entry.getKey().toLowerCase(), md);
         }
     }
 
@@ -99,14 +110,44 @@ public class PitDataHandler {
         if (data == null || !data.has("Pit") || !data.getAsJsonObject("Pit").has("Levels")) return;
         List<LevelData> list = new Gson().fromJson(data.getAsJsonObject("Pit").get("Levels"), new TypeToken<List<LevelData>>(){}.getType());
         LEVELS.clear();
-        LEVELS.addAll(list);
+        for (LevelData ld : list) {
+            ld.ColorCode = sanitize(ld.ColorCode);
+            LEVELS.add(ld);
+        }
     }
 
     private static void loadExtra() {
         if (data == null || !data.has("Extra") || !data.getAsJsonObject("Extra").has("RankPrefixes")) return;
         Map<String, String> map = new Gson().fromJson(data.getAsJsonObject("Extra").get("RankPrefixes"), new TypeToken<Map<String, String>>(){}.getType());
         RANK_PREFIXES.clear();
-        RANK_PREFIXES.putAll(map);
+        for (Map.Entry<String, String> entry : map.entrySet()) {
+            RANK_PREFIXES.put(entry.getKey(), sanitize(entry.getValue()));
+        }
+    }
+
+    /**
+     * Sanitizes strings from JSON to prevent rendering issues like "smile faces".
+     * Replaces standard emojis with readable symbols or strips them.
+     */
+    public static String sanitize(String input) {
+        if (input == null) return null;
+        
+        // 1. Convert alternate color codes
+        String output = input.replace("&", "\u00a7");
+        
+        // 2. Fix heart emojis (commonly cause smile faces in 1.8.9)
+        // \u2764 is the heart symbol. Minecraft 1.8.9 often fails on it.
+        output = output.replace("\u2764", "\u00a7c\u2764"); // Force red color for hearts
+        
+        // 3. Remove non-printable/control characters that aren't \u00a7
+        StringBuilder sb = new StringBuilder();
+        for (char c : output.toCharArray()) {
+            if (c == '\u00a7' || (c >= 32 && c < 127) || (c >= 160 && c <= 255) || c == '\u2764' || c == '\u27a1') {
+                sb.append(c);
+            }
+        }
+        
+        return sb.toString();
     }
 
     public static PrestigeData getPrestige(int index) {

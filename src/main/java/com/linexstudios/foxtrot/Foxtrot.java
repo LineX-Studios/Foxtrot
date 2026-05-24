@@ -112,6 +112,8 @@ public class Foxtrot {
         MinecraftForge.EVENT_BUS.register(WorldLoadListener.instance);
         MinecraftForge.EVENT_BUS.register(ModIDHider.instance);
         MinecraftForge.EVENT_BUS.register(MapDetectionHandler.instance);
+        MinecraftForge.EVENT_BUS.register(NameFormatHandler.instance);
+        MinecraftForge.EVENT_BUS.register(com.linexstudios.foxtrot.Handler.MiddleClickPlayerHandler.instance);
 
         ClientCommandHandler.instance.registerCommand(new CommandFoxtrot());
         System.out.println("[Foxtrot] Loaded.");

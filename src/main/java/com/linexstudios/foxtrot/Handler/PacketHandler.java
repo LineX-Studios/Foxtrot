@@ -46,6 +46,22 @@ public class PacketHandler {
             PitESP.instance.onBlockChange((S23PacketBlockChange) packet);
         } else if (packet instanceof S22PacketMultiBlockChange) {
             PitESP.instance.onMultiBlockChange((S22PacketMultiBlockChange) packet);
+        } else if (packet instanceof net.minecraft.network.play.server.S1DPacketEntityEffect) {
+            handleEffectPacket((net.minecraft.network.play.server.S1DPacketEntityEffect) packet);
+        }
+    }
+
+    private void handleEffectPacket(net.minecraft.network.play.server.S1DPacketEntityEffect packet) {
+        net.minecraft.client.entity.EntityPlayerSP player = net.minecraft.client.Minecraft.getMinecraft().thePlayer;
+        if (player == null || player.getEntityId() != packet.getEntityId()) return;
+        
+        // Potion ID 19 is Poison (Venom in Pit)
+        if (packet.getEffectId() == 19) {
+            int duration = packet.getDuration();
+            // Pit Venom duration is usually specific (e.g., 5s = 100 ticks, 12s = 240 ticks, 24s = 480 ticks)
+            if (duration > 0) {
+                com.linexstudios.foxtrot.Misc.AutoPantSwap.instance.onVenomPacketReceived();
+            }
         }
     }
 }

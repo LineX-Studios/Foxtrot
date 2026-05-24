@@ -7,6 +7,8 @@ import com.linexstudios.foxtrot.Denick.*;
 import com.linexstudios.foxtrot.Combat.*;
 import com.linexstudios.foxtrot.Util.*;
 import com.linexstudios.foxtrot.Enemy.*;
+import com.linexstudios.foxtrot.Dev.DevSession;
+import com.linexstudios.foxtrot.Dev.DevCommandHandler;
 import com.linexstudios.foxtrot.Handler.ConfigHandler;
 import com.linexstudios.foxtrot.Handler.TeammateManager;
 import com.linexstudios.foxtrot.Handler.FriendsManager;
@@ -17,6 +19,10 @@ import net.minecraft.command.ICommandSender;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.EnumChatFormatting;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -97,6 +103,54 @@ public class CommandFoxtrot extends CommandBase {
             case "enemyhud": EnemyHUD.enabled = !EnemyHUD.enabled; ConfigHandler.saveConfig(); msg(s, "EnemyHUD", EnemyHUD.enabled); break;
             case "rpc": ConfigHandler.discordRpcEnabled = !ConfigHandler.discordRpcEnabled; ConfigHandler.saveConfig(); if(ConfigHandler.discordRpcEnabled) DiscordRPCManager.start(); else DiscordRPCManager.stop(); msg(s, "Discord RPC", ConfigHandler.discordRpcEnabled); break;
             case "users": if(args.length>1 && args[1].equalsIgnoreCase("reload")){ com.linexstudios.foxtrot.Handler.FoxtrotUsersManager.initialize(); msg(s, EnumChatFormatting.GREEN+"Syncing global user list..."); } else msg(s, EnumChatFormatting.RED+"Usage: /fx users reload"); break;
+            case "dev":
+                // /fx dev auth <key>  — validate against the Foxtrot API Manager
+                if (args.length >= 3 && args[1].equalsIgnoreCase("auth")) {
+                    final String licenseKey = args[2];
+                    final String uuid = Minecraft.getMinecraft().thePlayer.getUniqueID().toString().replace("-", "").toLowerCase();
+                    final String name = Minecraft.getMinecraft().thePlayer.getName();
+                    final long timestamp = System.currentTimeMillis();
+                    final String handshakeKey = "4A57D7A87867586fjoiaoiu5098-q28-098-qkljfa1445da75=5-03=q-0482lkfnkljafa445f785a7e'skpofj";
+                    
+                    final String dataToSign = licenseKey + ":" + uuid + ":" + timestamp;
+                    final String signature = calculateHmacSha256(dataToSign, handshakeKey);
+
+                    msg(s, EnumChatFormatting.GRAY + "Verifying license key with secure handshake...");
+                    new Thread(() -> {
+                        try {
+                            URL url = new URL("https://foxtrot-api-manager.pages.dev/dev/auth");
+                            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                            conn.setRequestMethod("GET");
+                            conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+                            conn.setRequestProperty("X-Foxtrot-Key", licenseKey);
+                            conn.setRequestProperty("X-Foxtrot-User-UUID", uuid);
+                            conn.setRequestProperty("X-Foxtrot-User-Name", name);
+                            conn.setRequestProperty("X-Foxtrot-Timestamp", String.valueOf(timestamp));
+                            conn.setRequestProperty("X-Foxtrot-Signature", signature);
+                            conn.setConnectTimeout(5000);
+                            conn.setReadTimeout(5000);
+                            
+                            int code = conn.getResponseCode();
+                            if (code == 200) {
+                                DevSession.unlock();
+                                Minecraft.getMinecraft().addScheduledTask(() ->
+                                    msg(s, "" + EnumChatFormatting.GREEN + EnumChatFormatting.BOLD + "Dev mode authenticated. Type /fx dev help."));
+                            } else {
+                                Minecraft.getMinecraft().addScheduledTask(() ->
+                                    msg(s, EnumChatFormatting.RED + "License key rejected (" + code + "). Access denied."));
+                            }
+                        } catch (Exception e) {
+                            Minecraft.getMinecraft().addScheduledTask(() ->
+                                msg(s, EnumChatFormatting.RED + "Could not reach auth server: " + e.getMessage()));
+                        }
+                    }).start();
+                } else if (!DevSession.isActive()) {
+                    // Don't reveal anything useful — look like an unknown command
+                    msg(s, EnumChatFormatting.RED + "Unknown command.");
+                } else {
+                    DevCommandHandler.handle(s, args);
+                }
+                break;
             default: msg(s, EnumChatFormatting.RED+"Unknown command."); break;
         }
     }
@@ -118,5 +172,21 @@ public class CommandFoxtrot extends CommandBase {
     }
     private void msg(ICommandSender s, String m) { s.addChatMessage(new ChatComponentText(m)); }
     private void msg(ICommandSender s, String n, boolean b) { s.addChatMessage(new ChatComponentText(EnumChatFormatting.YELLOW + n + ": " + (b ? EnumChatFormatting.GREEN + "ON" : EnumChatFormatting.RED + "OFF"))); }
+    private static String calculateHmacSha256(String data, String key) {
+        try {
+            byte[] keyBytes = key.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            javax.crypto.spec.SecretKeySpec signingKey = new javax.crypto.spec.SecretKeySpec(keyBytes, "HmacSHA256");
+            javax.crypto.Mac mac = javax.crypto.Mac.getInstance("HmacSHA256");
+            mac.init(signingKey);
+            byte[] rawHmac = mac.doFinal(data.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder();
+            for (byte b : rawHmac) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (Exception e) {
+            return "";
+        }
+    }
 }
  // yep compressed this shit too so worth it went from over 450 lines of code to only 97 lines of code wow

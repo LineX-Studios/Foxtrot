@@ -5,31 +5,34 @@ import com.google.gson.reflect.TypeToken;
 
 import java.io.*;
 import java.lang.reflect.Type;
-import java.util.HashMap;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class CacheManager {
     private static final File CONFIG_DIR = new File("config/Foxtrot");
     private static final File CACHE_FILE = new File(CONFIG_DIR, "denicked.json");
     private static final Gson gson = new Gson();
-    private static Map<String, String> cache = new HashMap<>();
+    private static Map<String, String> cache = new ConcurrentHashMap<>();
 
     public static void loadCache() {
         if (!CONFIG_DIR.exists()) CONFIG_DIR.mkdirs();
         if (!CACHE_FILE.exists()) return;
 
-        try (Reader reader = new FileReader(CACHE_FILE)) {
+        try (Reader reader = new InputStreamReader(new FileInputStream(CACHE_FILE), StandardCharsets.UTF_8)) {
             Type type = new TypeToken<Map<String, String>>() {}.getType();
-            cache = gson.fromJson(reader, type);
-            if (cache == null) cache = new HashMap<>();
+            Map<String, String> loaded = gson.fromJson(reader, type);
+            if (loaded != null) {
+                cache.putAll(loaded);
+            }
         } catch (Exception e) {
-            cache = new HashMap<>();
+            e.printStackTrace();
         }
     }
 
     public static void saveCache() {
         if (!CONFIG_DIR.exists()) CONFIG_DIR.mkdirs();
-        try (Writer writer = new FileWriter(CACHE_FILE)) {
+        try (Writer writer = new OutputStreamWriter(new FileOutputStream(CACHE_FILE), StandardCharsets.UTF_8)) {
             gson.toJson(cache, writer);
         } catch (IOException e) {
             e.printStackTrace();

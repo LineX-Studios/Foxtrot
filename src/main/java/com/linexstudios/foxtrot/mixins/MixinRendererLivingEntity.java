@@ -49,26 +49,30 @@ public abstract class MixinRendererLivingEntity extends Render<EntityLivingBase>
                 
                 int i = fontrenderer.getStringWidth(str) / 2;
                 int logoSpace = 11; 
+                int shift = 5; // Balanced shift on integer grid for 11px logoSpace
+                
+                int logoX = -i - logoSpace + shift; // -i - 6
+                int textX = -i + shift; // -i + 5
                 
                 GlStateManager.disableTexture2D();
                 Tessellator tessellator = Tessellator.getInstance();
                 WorldRenderer worldrenderer = tessellator.getWorldRenderer();
                 worldrenderer.begin(7, DefaultVertexFormats.POSITION_COLOR);
-                worldrenderer.pos((double)(-i - 1 - logoSpace), -1.0D, 0.0D).color(0.0F, 0.0F, 0.0F, 0.25F).endVertex();
-                worldrenderer.pos((double)(-i - 1 - logoSpace), 8.0D, 0.0D).color(0.0F, 0.0F, 0.0F, 0.25F).endVertex();
-                worldrenderer.pos((double)(i + 1), 8.0D, 0.0D).color(0.0F, 0.0F, 0.0F, 0.25F).endVertex();
-                worldrenderer.pos((double)(i + 1), -1.0D, 0.0D).color(0.0F, 0.0F, 0.0F, 0.25F).endVertex();
+                worldrenderer.pos((double)(logoX - 1), -1.0D, 0.0D).color(0.0F, 0.0F, 0.0F, 0.25F).endVertex();
+                worldrenderer.pos((double)(logoX - 1), 8.0D, 0.0D).color(0.0F, 0.0F, 0.0F, 0.25F).endVertex();
+                worldrenderer.pos((double)(textX + fontrenderer.getStringWidth(str) + 1), 8.0D, 0.0D).color(0.0F, 0.0F, 0.0F, 0.25F).endVertex();
+                worldrenderer.pos((double)(textX + fontrenderer.getStringWidth(str) + 1), -1.0D, 0.0D).color(0.0F, 0.0F, 0.0F, 0.25F).endVertex();
                 tessellator.draw();
                 GlStateManager.enableTexture2D();
                 
                 GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
                 this.bindTexture(FX_LOGO);
-                net.minecraft.client.gui.Gui.drawModalRectWithCustomSizedTexture(-i - logoSpace, -1, 0, 0, 9, 9, 9, 9);
+                net.minecraft.client.gui.Gui.drawModalRectWithCustomSizedTexture(logoX, -1, 0, 0, 9, 9, 9, 9);
                 
-                fontrenderer.drawString(str, -i, 0, 553648127);
+                fontrenderer.drawString(str, textX, 0, 553648127);
                 GlStateManager.enableDepth();
                 GlStateManager.depthMask(true);
-                fontrenderer.drawString(str, -i, 0, -1);
+                fontrenderer.drawString(str, textX, 0, -1);
                 
                 GlStateManager.enableLighting();
                 GlStateManager.disableBlend();
