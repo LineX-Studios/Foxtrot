@@ -89,7 +89,7 @@ public class NickedHUD extends DraggableHUD {
                 finalDisplayName += EnumChatFormatting.YELLOW + " (" + cleanedRealIGN + EnumChatFormatting.YELLOW + ")";
             }
 
-            finalDisplayName = truncate(finalDisplayName, 32);
+            // Removed truncation to allow full real IGNs to render
             String gearPart = (player.lastKnownGear != null && !player.lastKnownGear.isEmpty()) ? player.lastKnownGear : "";
             
             String locStr = "";

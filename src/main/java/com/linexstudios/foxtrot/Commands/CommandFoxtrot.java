@@ -107,20 +107,34 @@ public class CommandFoxtrot extends CommandBase {
                 // /fx dev auth <key>  — validate against the Foxtrot API Manager
                 if (args.length >= 3 && args[1].equalsIgnoreCase("auth")) {
                     final String licenseKey = args[2];
-                    msg(s, EnumChatFormatting.GRAY + "Verifying license key...");
+                    final String uuid = Minecraft.getMinecraft().thePlayer.getUniqueID().toString().replace("-", "").toLowerCase();
+                    final String name = Minecraft.getMinecraft().thePlayer.getName();
+                    final long timestamp = System.currentTimeMillis();
+                    final String handshakeKey = "4A57D7A87867586fjoiaoiu5098-q28-098-qkljfa1445da75=5-03=q-0482lkfnkljafa445f785a7e'skpofj";
+                    
+                    final String dataToSign = licenseKey + ":" + uuid + ":" + timestamp;
+                    final String signature = calculateHmacSha256(dataToSign, handshakeKey);
+
+                    msg(s, EnumChatFormatting.GRAY + "Verifying license key with secure handshake...");
                     new Thread(() -> {
                         try {
                             URL url = new URL("https://foxtrot-api-manager.pages.dev/dev/auth");
                             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                             conn.setRequestMethod("GET");
+                            conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
                             conn.setRequestProperty("X-Foxtrot-Key", licenseKey);
+                            conn.setRequestProperty("X-Foxtrot-User-UUID", uuid);
+                            conn.setRequestProperty("X-Foxtrot-User-Name", name);
+                            conn.setRequestProperty("X-Foxtrot-Timestamp", String.valueOf(timestamp));
+                            conn.setRequestProperty("X-Foxtrot-Signature", signature);
                             conn.setConnectTimeout(5000);
                             conn.setReadTimeout(5000);
+                            
                             int code = conn.getResponseCode();
                             if (code == 200) {
                                 DevSession.unlock();
                                 Minecraft.getMinecraft().addScheduledTask(() ->
-                                    msg(s, EnumChatFormatting.GREEN + EnumChatFormatting.BOLD + "Dev mode authenticated. Type /fx dev help."));
+                                    msg(s, "" + EnumChatFormatting.GREEN + EnumChatFormatting.BOLD + "Dev mode authenticated. Type /fx dev help."));
                             } else {
                                 Minecraft.getMinecraft().addScheduledTask(() ->
                                     msg(s, EnumChatFormatting.RED + "License key rejected (" + code + "). Access denied."));
@@ -158,5 +172,21 @@ public class CommandFoxtrot extends CommandBase {
     }
     private void msg(ICommandSender s, String m) { s.addChatMessage(new ChatComponentText(m)); }
     private void msg(ICommandSender s, String n, boolean b) { s.addChatMessage(new ChatComponentText(EnumChatFormatting.YELLOW + n + ": " + (b ? EnumChatFormatting.GREEN + "ON" : EnumChatFormatting.RED + "OFF"))); }
+    private static String calculateHmacSha256(String data, String key) {
+        try {
+            byte[] keyBytes = key.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            javax.crypto.spec.SecretKeySpec signingKey = new javax.crypto.spec.SecretKeySpec(keyBytes, "HmacSHA256");
+            javax.crypto.Mac mac = javax.crypto.Mac.getInstance("HmacSHA256");
+            mac.init(signingKey);
+            byte[] rawHmac = mac.doFinal(data.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder();
+            for (byte b : rawHmac) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (Exception e) {
+            return "";
+        }
+    }
 }
  // yep compressed this shit too so worth it went from over 450 lines of code to only 97 lines of code wow

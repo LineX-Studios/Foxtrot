@@ -4,7 +4,7 @@ import com.linexstudios.foxtrot.Combat.*;
 import com.linexstudios.foxtrot.Denick.*;
 import com.linexstudios.foxtrot.Enemy.*;
 import com.linexstudios.foxtrot.Handler.ConfigHandler;
-import com.linexstudios.foxtrot.Handler.DiscordRPCManager;
+import com.linexstudios.foxtrot.Util.DiscordRPCManager;
 import com.linexstudios.foxtrot.Hud.*;
 import com.linexstudios.foxtrot.Misc.*;
 import com.linexstudios.foxtrot.Render.*;
@@ -141,7 +141,7 @@ public class DevCommandHandler {
                 msg(s, status("AutoClicker",   AutoClicker.enabled));
                 msg(s, status("Wtap",          Wtap.enabled));
                 msg(s, status("ChestStealer",  ChestStealer.enabled));
-                msg(s, status("AutoPantSwap",  AutoPantSwap.enabled));
+                msg(s, status("AutoPantSwap",  AutoPantSwap.pantSwapEnabled));
                 msg(s, status("AutoGhead",     AutoGhead.enabled));
                 msg(s, status("AutoBulletTime",AutoBulletTime.enabled));
                 msg(s, status("AutoQuickMath", AutoQuickMath.enabled));
@@ -200,7 +200,7 @@ public class DevCommandHandler {
 
             // ── FULL SYSTEM STATUS SNAPSHOT ──────────────────────────────────────
             case "status": {
-                msg(s, EnumChatFormatting.GOLD + EnumChatFormatting.BOLD + "=== FOXTROT FULL STATUS ===");
+                msg(s, "" + EnumChatFormatting.GOLD + EnumChatFormatting.BOLD + "=== FOXTROT FULL STATUS ===");
                 // Ban detector
                 long elapsed = System.currentTimeMillis() - WhoGotBanned.instance.lobbyJoinTime;
                 msg(s, "WhoGotBanned grace: " + (elapsed < 10_000
@@ -230,7 +230,7 @@ public class DevCommandHandler {
 
             // ── TEST ALL ─────────────────────────────────────────────────────────
             case "testall": {
-                msg(s, EnumChatFormatting.GOLD + EnumChatFormatting.BOLD + "Running full module test suite...");
+                msg(s, "" + EnumChatFormatting.GOLD + EnumChatFormatting.BOLD + "Running full module test suite...");
 
                 // Collect results
                 List<String> passed = new ArrayList<>();
@@ -295,7 +295,8 @@ public class DevCommandHandler {
                 try {
                     boolean ok = (AutoClicker.enabled || !AutoClicker.enabled)
                               && (Wtap.enabled || !Wtap.enabled)
-                              && (ChestStealer.enabled || !ChestStealer.enabled);
+                              && (ChestStealer.enabled || !ChestStealer.enabled)
+                              && (AutoPantSwap.pantSwapEnabled || !AutoPantSwap.pantSwapEnabled);
                     if (ok) passed.add("Combat.fields"); else failed.add("Combat.fields");
                 } catch (Exception e) { failed.add("Combat.fields [EXCEPTION:" + e.getMessage() + "]"); }
 
@@ -352,7 +353,7 @@ public class DevCommandHandler {
                     msg(s, EnumChatFormatting.RED + "FAILED (" + failed.size() + "):");
                     for (String f : failed) msg(s, EnumChatFormatting.RED + "  ✘ " + f);
                 } else {
-                    msg(s, EnumChatFormatting.GREEN + EnumChatFormatting.BOLD + "All tests passed!");
+                    msg(s, "" + EnumChatFormatting.GREEN + EnumChatFormatting.BOLD + "All tests passed!");
                 }
                 msg(s, EnumChatFormatting.GRAY + "Note: [MANUAL-VERIFY] items require in-game observation.");
                 break;
@@ -385,7 +386,7 @@ public class DevCommandHandler {
     private static void printHelp(ICommandSender s) {
         String p = EnumChatFormatting.GOLD + "/fx dev ";
         String g = EnumChatFormatting.GRAY + "- ";
-        msg(s, EnumChatFormatting.GOLD + EnumChatFormatting.BOLD + "=== FX DEV COMMANDS ===");
+        msg(s, "" + EnumChatFormatting.GOLD + EnumChatFormatting.BOLD + "=== FX DEV COMMANDS ===");
         msg(s, "");
         msg(s, EnumChatFormatting.YELLOW + "[ Ban Detector ]");
         msg(s, p + "testban <name>"         + g + "Simulate confirmed ban (RED, 1 candidate)");

@@ -29,7 +29,7 @@ public class WhoGotBanned {
     // Players who vanished from tab in the current detection window (Name ->
     // Timestamp)
     // Cleared after every ban chat event is processed
-    private final Map<String, Long> candidates = new ConcurrentHashMap<>();
+    public final Map<String, Long> candidates = new ConcurrentHashMap<>();
 
     // Long-term cache: prevents reporting the same player twice in one session
     public final Set<String> alreadyReported = ConcurrentHashMap.newKeySet();
@@ -40,10 +40,10 @@ public class WhoGotBanned {
 
     // Detection tuning constants
     // How long a candidate stays valid after they left the tab list
-    private static final long CANDIDATE_TTL_MS = 15_000;
+    private static final long CANDIDATE_TTL_MS = 3_000;
     // Mass-leave threshold — if more than this many left at once, it's a reshuffle
     // not a ban
-    private static final int MASS_LEAVE_THRESHOLD = 3;
+    private static final int MASS_LEAVE_THRESHOLD = 5;
 
     private static final String PROXY_API_URL = "https://foxtrot-api.vercel.app/ban";
 
@@ -125,37 +125,21 @@ public class WhoGotBanned {
      */
     public void runBanDetection() {
         // --- BAN MESSAGE DETECTED ---
-        // Build the list of valid candidates (not already reported, within TTL)
         long now = System.currentTimeMillis();
-        Set<String> validCandidates = new HashSet<>();
+        java.util.List<Map.Entry<String, Long>> sortedCandidates = new java.util.ArrayList<>();
 
         for (Map.Entry<String, Long> entry : candidates.entrySet()) {
             String name = entry.getKey();
-
-            // Skip anyone already reported this session (deduplication cache)
-            if (alreadyReported.contains(name))
-                continue;
+            // Skip anyone already reported this session
+            if (alreadyReported.contains(name)) continue;
 
             // Only include candidates who left recently enough to be plausible
             if (now - entry.getValue() <= CANDIDATE_TTL_MS) {
-                validCandidates.add(name);
+                sortedCandidates.add(entry);
             }
         }
 
-        // Secondary spam guard: abort if too many candidates remain after the ban message
-        if (validCandidates.size() > MASS_LEAVE_THRESHOLD) {
-            candidates.clear();
-            if (mc.thePlayer != null) {
-                mc.thePlayer.addChatMessage(new ChatComponentText(
-                        EnumChatFormatting.GRAY + "[" + EnumChatFormatting.RED + "Foxtrot" +
-                                EnumChatFormatting.GRAY + "] " +
-                                EnumChatFormatting.DARK_GRAY
-                                + "Ban detected but too many bans — skipping to avoid spam."));
-            }
-            return;
-        }
-
-        if (validCandidates.isEmpty()) {
+        if (sortedCandidates.isEmpty()) {
             // No valid candidate found
             if (mc.thePlayer != null) {
                 mc.thePlayer.addChatMessage(new ChatComponentText(
@@ -166,12 +150,22 @@ public class WhoGotBanned {
             return;
         }
 
+        // Sort candidates so the ones who left CLOSEST to the ban message time are first
+        sortedCandidates.sort((a, b) -> Long.compare(b.getValue(), a.getValue()));
+
+        // Mitigation: If there are still too many candidates, instead of aborting,
+        // we just take the top closest ones up to the threshold.
+        if (sortedCandidates.size() > MASS_LEAVE_THRESHOLD) {
+            sortedCandidates = sortedCandidates.subList(0, MASS_LEAVE_THRESHOLD);
+        }
+
         // Color communicates confidence — no extra label text:
         // Exactly 1 candidate = HIGH confidence → RED
         // Multiple candidates = MEDIUM confidence → YELLOW
-        boolean isHighConfidence = (validCandidates.size() == 1);
+        boolean isHighConfidence = (sortedCandidates.size() == 1);
 
-        for (String bannedPlayer : validCandidates) {
+        for (Map.Entry<String, Long> entry : sortedCandidates) {
+            String bannedPlayer = entry.getKey();
             // Mark as reported so we never double-report
             alreadyReported.add(bannedPlayer);
             candidates.remove(bannedPlayer);
