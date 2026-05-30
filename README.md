@@ -1,9 +1,9 @@
 # Foxtrot-PIT
 
-[![Foxtrot Version](https://img.shields.io/github/v/tag/LineX-Studios/FOXTROT-PIT?label=Foxtrot&color=blue&style=flat-square)](https://github.com/LineX-Studios/FOXTROT/releases/latest)
-[![Build Status](https://github.com/LineX-Studios/FOXTROT/actions/workflows/build.yml/badge.svg)](https://github.com/LineX-Studios/FOXTROT/actions)
+[![Foxtrot Version](https://img.shields.io/github/v/tag/LineX-Studios/Foxtrot?label=Foxtrot&color=blue&style=flat-square)](https://github.com/LineX-Studios/Foxtrot/releases/latest)
+[![Build Status](https://github.com/LineX-Studios/Foxtrot/actions/workflows/build.yml/badge.svg)](https://github.com/LineX-Studios/Foxtrot/actions)
 ![Minecraft Version](https://img.shields.io/badge/Minecraft-1.8.9-gray?style=flat-square)
-[![Total Downloads](https://img.shields.io/github/downloads/LineX-Studios/FOXTROT/total.svg)]([https://github.com/linexstudios/foxtrot/](https://github.com/LineX-Studios/FOXTROT/)releases)
+[![Total Downloads](https://img.shields.io/github/downloads/LineX-Studios/Foxtrot/total.svg)]([https://github.com/linexstudios/Foxtrot/](https://github.com/LineX-Studios/Foxtrot/)releases)
 
 [![Discord](https://img.shields.io/badge/Discord-7289DA?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/3mDn6vcTuK)
 
