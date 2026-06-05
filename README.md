@@ -1,4 +1,4 @@
-# Foxtrot PIT - A Hypixel Pit Mod
+# Hypixel Pit Mod | FOXTROT
 
 [![Foxtrot Version](https://img.shields.io/github/v/tag/LineX-Studios/Foxtrot?label=Foxtrot&color=blue&style=flat-square)](https://github.com/LineX-Studios/Foxtrot/releases/latest)
 [![Build Status](https://github.com/LineX-Studios/Foxtrot/actions/workflows/build.yml/badge.svg)](https://github.com/LineX-Studios/Foxtrot/actions)
