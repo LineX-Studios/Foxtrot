@@ -1,4 +1,4 @@
-# Foxtrot-PIT
+# Foxtrot PIT - A Hypixel Pit Mod
 
 [![Foxtrot Version](https://img.shields.io/github/v/tag/LineX-Studios/Foxtrot?label=Foxtrot&color=blue&style=flat-square)](https://github.com/LineX-Studios/Foxtrot/releases/latest)
 [![Build Status](https://github.com/LineX-Studios/Foxtrot/actions/workflows/build.yml/badge.svg)](https://github.com/LineX-Studios/Foxtrot/actions)
@@ -106,3 +106,5 @@ Foxtrot features a comprehensive command system. You can use `/foxtrot` or the s
 
 **TO COMPILE:**
 go to git bash and use the command `./gradlew shadowjar`
+
+
