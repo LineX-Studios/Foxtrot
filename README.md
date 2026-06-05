@@ -18,8 +18,8 @@ Foxtrot is a highly optimized, open-source utility mod  exclusively for 1.8.9 Fo
 
 ### Support & Links
 * **Support & discussion:** [Discord](https://discord.gg/ExfhRcVJnU)
-* **Report issues:** [Report any Issues here](https://github.com/LineX-Studios/FOXTROT-PIT/issues)
-* **Source Code:** [GitHub Repository](https://github.com/LineX-Studios/FOXTROT-PIT)
+* **Report issues:** [Report any Issues here](https://github.com/LineX-Studios/Foxtrot/issues)
+* **Source Code:** [GitHub Repository](https://github.com/LineX-Studios/Foxtrot)
 * **Live Telemetry:** [Website](https://linex-studios.github.io/)
 
 ---
